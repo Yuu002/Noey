@@ -20,25 +20,20 @@ for product in product_names:
     product_list.append(product.get_text().strip())
 # print(product_list)
 
-# list สำหรับแยกข้อความภาษาไทยและอังกฤษ
+# list สำหรับเก็บข้อความภาษาอังกฤษ
 english_products = []
-thai_products = []
 
-# function ในการแยกข้อความภาษาไทยกับอังฤษ
-def split_english_thai(text):
-    for index, char in enumerate(text):
-        if re.match(r'[ก-๙]', char):
-            return text[:index].strip(),text[index:].strip()
+# function ในการลบตัวอักษรภาษาไทยออก
+def remove_thai(text):
+    # ใช้ regex เพื่อลบตัวอักษรภาษาไทย
+    english_only = re.sub(r'[ก-๙]+', '', text)
+    return english_only.strip()
 
-# แยกชื่อสินค้าระหว่างภาษาไทยกับอังกฤษ
+# ลบส่วนภาษาไทยออกและเก็บเฉพาะส่วนภาษาอังกฤษ
 for product in product_list:
-    english_part, thai_part = split_english_thai(product)
-    english_products.append(english_part.strip())
-    thai_products.append(thai_part.strip())
-#print(english_products)
-#print(thai_products)
-
-
+    english_part = remove_thai(product)
+    english_products.append(english_part)
+print(english_products)
 
 # หา element ที่มีราคาที่ลดและราคาปกติ
 products = soup.find_all('div', class_='product2-price-circle')
@@ -80,7 +75,6 @@ for name in names:
     if '-' in promotion_list:  # ตรวจสอบว่าในผลลัพธ์มี "-" อยู่แล้วหรือไม่
         sign_tag = name.find(class_='sign signtop--bigsale')
         if sign_tag:
-            # แทนที่ "-" ที่ตรวจพบด้วย "big sale"
             promotion_list[promotion_list.index('-')] = 'big sale'
 #print(promotion_list)
 
