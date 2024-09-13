@@ -62,18 +62,26 @@ for product in products:
 #print(sales_list)
 
 # ดึงข้อมูลโปรโมชั่น
-details = soup.find_all(class_ = 'product2-detail')
+# ค้นหา elements ทั้งหมดที่มีคลาส product2-detail และ product2
+details = soup.find_all(class_='product2-detail')
+names = soup.find_all(class_='product2')
 promotion_list = []
+
+# ตรวจสอบ element จาก class product2-detail สำหรับ flash sale
 for detail in details:
     img_tag = detail.find('img')
     if img_tag and 'src' in img_tag.attrs:
         promotion_list.append('flash sale')
     else:
-        sign_tag = detail.find(class_ ='sign  signtop--bigsale')
+        promotion_list.append('-')  # ในกรณีที่ไม่มี img ใน product2-detail
+
+# ตรวจสอบ element จาก class product2 สำหรับ big sale
+for name in names:
+    if '-' in promotion_list:  # ตรวจสอบว่าในผลลัพธ์มี "-" อยู่แล้วหรือไม่
+        sign_tag = name.find(class_='sign signtop--bigsale')
         if sign_tag:
-            promotion_list.append('big sale')
-        else:
-            promotion_list.append('-')
+            # แทนที่ "-" ที่ตรวจพบด้วย "big sale"
+            promotion_list[promotion_list.index('-')] = 'big sale'
 #print(promotion_list)
 
 # ดึงข้อมูลยอดขายสินค้า
