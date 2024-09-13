@@ -38,6 +38,8 @@ for product in product_list:
 #print(english_products)
 #print(thai_products)
 
+
+
 # หา element ที่มีราคาที่ลดและราคาปกติ
 products = soup.find_all('div', class_='product2-price-circle')
 
@@ -59,6 +61,21 @@ for product in products:
 #print(prices_list)
 #print(sales_list)
 
+# ดึงข้อมูลโปรโมชั่น
+details = soup.find_all(class_ = 'product2-detail')
+promotion_list = []
+for detail in details:
+    img_tag = detail.find('img')
+    if img_tag and 'src' in img_tag.attrs:
+        promotion_list.append('flash sale')
+    else:
+        sign_tag = detail.find(class_ ='sign  signtop--bigsale')
+        if sign_tag:
+            promotion_list.append('big sale')
+        else:
+            promotion_list.append('-')
+#print(promotion_list)
+
 # ดึงข้อมูลยอดขายสินค้า
 sold = soup.find_all(class_='product2-bottom')
 sold_list = [sold.get_text().strip().split(' ')[-1] for sold in sold]
@@ -66,14 +83,14 @@ sold_list = [sold.get_text().strip().split(' ')[-1] for sold in sold]
 
 # สร้าง text file
 with open('product_prices.txt', 'w', encoding='utf-8') as f:
-    for english, prices, sale, sold in zip(english_products, prices_list, sales_list, sold_list):
-        f.write(english + '\t' +  prices + '\t' + sale + '\t' + sold + '\n')
+    for english, prices, sale, promotion, sold in zip(english_products, prices_list, sales_list, promotion_list, sold_list):
+        f.write(english + '\t' +  prices + '\t' + sale + '\t' + promotion + '\t' + sold + '\n')
 print("Data saved to products.txt")
 
 # สร้าง .csv file
 with open('product_prices.csv', 'w', encoding='utf-8-sig', newline='') as f:
     writer = csv.writer(f)
-    writer.writerow(['Product_names', 'Prices', 'Sales', 'Sold_out'])
-    for english, prices, sale, sold in zip(english_products, prices_list, sales_list, sold_list):
-        writer.writerow([english, prices, sale, sold])
+    writer.writerow(['Product_names', 'Prices', 'Sales', 'Promotion', 'Sold_out'])
+    for english, prices, sale, promotion, sold in zip(english_products, prices_list, sales_list, promotion_list, sold_list):
+        writer.writerow([english, prices, sale, promotion, sold])
 print("Data saved to products.csv")
