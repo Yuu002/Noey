@@ -1,0 +1,32 @@
+SELECT 
+    year,
+    province,
+    SUM(CASE WHEN sex = 'ชาย' THEN value END) AS male_population,
+    SUM(CASE WHEN sex = 'หญิง' THEN value END) AS female_population,
+    SUM(value) AS total_population
+FROM 
+    population_data
+WHERE 
+    year BETWEEN 2560 AND 2563
+GROUP BY 
+    year, province
+ORDER BY 
+    province;
+
+SELECT 
+    p.province,
+    p.year,
+    SUM(CASE WHEN p.sex = 'ชาย' THEN p.value ELSE 0 END) +
+    SUM(CASE WHEN p.sex = 'หญิง' THEN p.value ELSE 0 END) AS total_population,
+    (c.result * (SUM(CASE WHEN p.sex = 'ชาย' THEN p.value ELSE 0 END) +
+                  SUM(CASE WHEN p.sex = 'หญิง' THEN p.value ELSE 0 END)) / 100000) AS estimated_deaths
+FROM 
+    population_data p
+JOIN 
+    cancer_data c ON p.province = c.province AND p.year = c.year
+WHERE 
+    p.year BETWEEN 2560 AND 2563
+GROUP BY 
+    p.province, p.year, c.result
+ORDER BY 
+    p.province;
