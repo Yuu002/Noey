@@ -3,7 +3,6 @@ import pandas as pd
 # config
 raw_data_path = "sale_forecast_model/data/raw/sales.csv"
 output_path = "sale_forecast_model/data/processed/monthly_sales.csv"
-import pandas as pd
 
 data_col = "Order_Date"
 sales_col = "Unit_Price"
@@ -31,3 +30,7 @@ monthly["month"] = monthly["month"].dt.strftime("%Y-%m")
 
 print("\nMonthly sales preview:")
 print(monthly)
+
+# save
+monthly.to_csv(output_path, index=False)
+print(f"\nSave monthly sales to {output_path}")
