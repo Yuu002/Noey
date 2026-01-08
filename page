@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 
-from sklearn.metrics import mean_absolute_error, mean_squared_error
 from statsmodels.tsa.holtwinters import SimpleExpSmoothing, Holt
 from statsmodels.tsa.arima.model import ARIMA
 
@@ -9,56 +8,55 @@ from statsmodels.tsa.arima.model import ARIMA
 # LOAD DATA
 # =========================
 df = pd.read_csv("data/processed/monthly_sales.csv")
+
+months = df["month"]
 y = df["sales"]
 
 # =========================
 # TRAIN / TEST
 # =========================
-train = y.iloc[:23]   # train
-test  = y.iloc[23:]   # test (2 เดือน)
-
-# =========================
-# EVALUATE FUNC
-# =========================
-def evaluate(name, actual, pred):
-    mae = mean_absolute_error(actual, pred)
-    rmse = np.sqrt(mean_squared_error(actual, pred))
-    return {
-        "model": name,
-        "MAE": round(mae, 2),
-        "RMSE": round(rmse, 2)
-    }
+train = y.iloc[:23]
+test  = y.iloc[23:]              # 2 เดือน
+test_months = months.iloc[23:]
 
 results = []
+
+def add_result(model_name, forecast):
+    results.append({
+        "model": model_name,
+        "month_1": test_months.iloc[0],
+        "actual_1": test.iloc[0],
+        "forecast_1": round(forecast[0], 2),
+        "month_2": test_months.iloc[1],
+        "actual_2": test.iloc[1],
+        "forecast_2": round(forecast[1], 2),
+    })
 
 # =========================
 # 1) NAIVE
 # =========================
-naive_forecast = np.repeat(train.iloc[-1], len(test))
-results.append(evaluate("Naive", test, naive_forecast))
+naive_forecast = np.repeat(train.iloc[-1], 2)
+add_result("Naive", naive_forecast)
 
 # =========================
 # 2) MA3 / MA4 / MA5 / MA6
 # =========================
 for w in [3, 4, 5, 6]:
     ma = train.rolling(window=w).mean()
-    forecast = np.repeat(ma.iloc[-1], len(test))
-    results.append(evaluate(f"MA{w}", test, forecast))
+    forecast = np.repeat(ma.iloc[-1], 2)
+    add_result(f"MA{w}", forecast)
 
 # =========================
-# 3) SES (ลองหลาย alpha)
+# 3) SES
 # =========================
 for alpha in [0.2, 0.3, 0.4, 0.5]:
     model = SimpleExpSmoothing(train, initialization_method="estimated")
-    fit = model.fit(
-        smoothing_level=alpha,
-        optimized=False
-    )
-    forecast = fit.forecast(len(test))
-    results.append(evaluate(f"SES alpha={alpha}", test, forecast))
+    fit = model.fit(smoothing_level=alpha, optimized=False)
+    forecast = fit.forecast(2)
+    add_result(f"SES alpha={alpha}", forecast)
 
 # =========================
-# 4) HOLT (trend)
+# 4) HOLT
 # =========================
 holt_params = [(0.3, 0.1), (0.4, 0.1), (0.4, 0.2)]
 for alpha, beta in holt_params:
@@ -68,24 +66,22 @@ for alpha, beta in holt_params:
         smoothing_trend=beta,
         optimized=False
     )
-    forecast = fit.forecast(len(test))
-    results.append(evaluate(f"Holt a={alpha}, b={beta}", test, forecast))
+    forecast = fit.forecast(2)
+    add_result(f"Holt a={alpha}, b={beta}", forecast)
 
 # =========================
 # 5) ARIMA
 # =========================
-arima_orders = [(1,0,0), (0,1,1), (1,1,1)]
-for order in arima_orders:
+for order in [(1,0,0), (0,1,1), (1,1,1)]:
     model = ARIMA(train, order=order)
     fit = model.fit()
-    forecast = fit.forecast(len(test))
-    results.append(evaluate(f"ARIMA{order}", test, forecast))
+    forecast = fit.forecast(2)
+    add_result(f"ARIMA{order}", forecast)
 
 # =========================
 # RESULT TABLE
 # =========================
 result_df = pd.DataFrame(results)
-result_df = result_df.sort_values("MAE")
 
-print("\n===== MODEL COMPARISON =====")
+print("\n===== TEST FORECAST (2 MONTHS) =====")
 print(result_df.to_string(index=False))
