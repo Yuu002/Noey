@@ -1,78 +1,91 @@
-      month     sales
-0   2023-07  22296.34
-1   2023-08  49442.34
-2   2023-09  35969.26
-3   2023-10  45420.09
-4   2023-11  19346.71
-5   2023-12  52895.06
-6   2024-01  40436.16
-7   2024-02  22921.78
-8   2024-03  34038.47
-9   2024-04  31790.49
-10  2024-05  31645.83
-11  2024-06  27161.44
-12  2024-07  36234.80
-13  2024-08  46041.91
-14  2024-09  47871.02
-15  2024-10  28385.27
-16  2024-11  28345.56
-17  2024-12  31385.38
-18  2025-01  36903.77
-19  2025-02  16877.22
-20  2025-03  48570.61
-21  2025-04  30041.72
-22  2025-05  45947.95
-23  2025-06  17646.78
-24  2025-07  21498.44
+import pandas as pd
+import numpy as np
 
-No discount
-0   2023-07   38047.61
-1   2023-08   50714.61
-2   2023-09   26950.03
-3   2023-10   10291.54
-4   2023-11   41204.37
-5   2023-12  109862.96
-6   2024-01   39816.54
-7   2024-02   43951.50
-8   2024-03   54156.15
-9   2024-04   43817.84
-10  2024-05   25947.55
-11  2024-06   63892.37
-12  2024-07   35632.92
-13  2024-08   51483.54
-14  2024-09   53275.25
-15  2024-10   34112.90
-16  2024-11    -360.64
-17  2024-12   -5804.32
-18  2025-01   82149.26
-19  2025-02   10609.83
-20  2025-03   26682.39
-21  2025-04   50704.84
-22  2025-05   12420.71
-23  2025-06   27208.86
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+from statsmodels.tsa.holtwinters import SimpleExpSmoothing, Holt
+from statsmodels.tsa.arima.model import ARIMA
 
-all
-0   2023-07  33466.8724
-1   2023-08  52364.8198
-2   2023-09  20900.8436
-3   2023-10  11462.1380
-4   2023-11  41204.3700
-5   2023-12  90321.2078
-6   2024-01  41234.2853
-7   2024-02  44893.0456
-8   2024-03  42154.9020
-9   2024-04  42947.9892
-10  2024-05  15832.6218
-11  2024-06  44877.3936
-12  2024-07  26182.5585
-13  2024-08  37218.8928
-14  2024-09  43244.1212
-15  2024-10  26977.9304
-16  2024-11   3132.7456
-17  2024-12  -5804.3200
-18  2025-01  76349.9938
-19  2025-02   2228.0643
-20  2025-03   5176.7442
-21  2025-04  39974.0320
-22  2025-05   9681.3513
-23  2025-06  22403.8728
+# =========================
+# LOAD DATA
+# =========================
+df = pd.read_csv("data/processed/monthly_sales.csv")
+y = df["sales"]
+
+# =========================
+# TRAIN / TEST
+# =========================
+train = y.iloc[:23]   # train
+test  = y.iloc[23:]   # test (2 เดือน)
+
+# =========================
+# EVALUATE FUNC
+# =========================
+def evaluate(name, actual, pred):
+    mae = mean_absolute_error(actual, pred)
+    rmse = np.sqrt(mean_squared_error(actual, pred))
+    return {
+        "model": name,
+        "MAE": round(mae, 2),
+        "RMSE": round(rmse, 2)
+    }
+
+results = []
+
+# =========================
+# 1) NAIVE
+# =========================
+naive_forecast = np.repeat(train.iloc[-1], len(test))
+results.append(evaluate("Naive", test, naive_forecast))
+
+# =========================
+# 2) MA3 / MA4 / MA5 / MA6
+# =========================
+for w in [3, 4, 5, 6]:
+    ma = train.rolling(window=w).mean()
+    forecast = np.repeat(ma.iloc[-1], len(test))
+    results.append(evaluate(f"MA{w}", test, forecast))
+
+# =========================
+# 3) SES (ลองหลาย alpha)
+# =========================
+for alpha in [0.2, 0.3, 0.4, 0.5]:
+    model = SimpleExpSmoothing(train, initialization_method="estimated")
+    fit = model.fit(
+        smoothing_level=alpha,
+        optimized=False
+    )
+    forecast = fit.forecast(len(test))
+    results.append(evaluate(f"SES alpha={alpha}", test, forecast))
+
+# =========================
+# 4) HOLT (trend)
+# =========================
+holt_params = [(0.3, 0.1), (0.4, 0.1), (0.4, 0.2)]
+for alpha, beta in holt_params:
+    model = Holt(train, initialization_method="estimated")
+    fit = model.fit(
+        smoothing_level=alpha,
+        smoothing_trend=beta,
+        optimized=False
+    )
+    forecast = fit.forecast(len(test))
+    results.append(evaluate(f"Holt a={alpha}, b={beta}", test, forecast))
+
+# =========================
+# 5) ARIMA
+# =========================
+arima_orders = [(1,0,0), (0,1,1), (1,1,1)]
+for order in arima_orders:
+    model = ARIMA(train, order=order)
+    fit = model.fit()
+    forecast = fit.forecast(len(test))
+    results.append(evaluate(f"ARIMA{order}", test, forecast))
+
+# =========================
+# RESULT TABLE
+# =========================
+result_df = pd.DataFrame(results)
+result_df = result_df.sort_values("MAE")
+
+print("\n===== MODEL COMPARISON =====")
+print(result_df.to_string(index=False))
