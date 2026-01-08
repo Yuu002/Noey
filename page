@@ -5,22 +5,29 @@ from statsmodels.tsa.arima.model import ARIMA
 
 # load data
 df = pd.read_csv("sale_forecast_model/data/processed/monthly_sales.csv")
+
 y = df["sales"]
+months = df["month"]
 
 # train/test
 train = y.iloc[:23]
 test  = y.iloc[23:]
 
+test_months = months.iloc[23:].reset_index(drop=True)
+test = test.reset_index(drop=True)
+
 # evaluate function
 def evaluate(name, actual, pred):
+    pred = np.asarray(pred)
+
     mae = mean_absolute_error(actual, pred)
     rmse = np.sqrt(mean_squared_error(actual, pred))
     return {
         "model": name,
         "MAE": round(mae, 2),
         "RMSE": round(rmse, 2),
-        "2025-06": round(pred.iloc[0], 2),
-        "2025-07": round(pred.iloc[0], 2)}
+        test_months.iloc[0]: round(pred[0], 2),
+        test_months.iloc[1]: round(pred[1], 2)}
 
 results = []
 
@@ -36,5 +43,5 @@ for order in arima_orders:
 result_df = pd.DataFrame(results)
 result_df = result_df.sort_values("MAE")
 
-print("\n===== MODEL COMPARISON (chart code) =====")
+print("\n===== MODEL COMPARISON (make self) =====")
 print(result_df.to_string(index=False))
