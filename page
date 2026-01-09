@@ -1,47 +1,26 @@
-import pandas as pd
-import numpy as np
-from sklearn.metrics import mean_absolute_error, mean_squared_error
-from statsmodels.tsa.arima.model import ARIMA
-
-# load data
-df = pd.read_csv("sale_forecast_model/data/processed/monthly_sales.csv")
-
-y = df["sales"]
-months = df["month"]
-
-# train/test
-train = y.iloc[:23]
-test  = y.iloc[23:]
-
-test_months = months.iloc[23:].reset_index(drop=True)
-test = test.reset_index(drop=True)
-
-# evaluate function
-def evaluate(name, actual, pred):
-    pred = np.asarray(pred)
-
-    mae = mean_absolute_error(actual, pred)
-    rmse = np.sqrt(mean_squared_error(actual, pred))
-    return {
-        "model": name,
-        "MAE": round(mae, 2),
-        "RMSE": round(rmse, 2),
-        test_months.iloc[0]: round(pred[0], 2),
-        test_months.iloc[1]: round(pred[1], 2)}
-
-results = []
-
-# 5) ARIMA model
-arima_orders = [(2,1,1), (1,1,2), (2,1,2)]
-for order in arima_orders:
-    model = ARIMA(train, order=order)
-    fit = model.fit()
-    forecast = fit.forecast(len(test))
-    results.append(evaluate(f"ARIMA{order}", test, forecast))
-
-# result table
-result_df = pd.DataFrame(results)
-result_df = result_df.sort_values("MAE")
-
-print("\n===== MODEL COMPARISON (make self) =====")
-print(result_df.to_string(index=False))
+month,sales
+2023-07,22296.34
+2023-08,49442.34
+2023-09,35969.26
+2023-10,45420.09
+2023-11,19346.71
+2023-12,52895.06
+2024-01,40436.16
+2024-02,22921.78
+2024-03,34038.47
+2024-04,31790.49
+2024-05,31645.83
+2024-06,27161.44
+2024-07,36234.8
+2024-08,46041.91
+2024-09,47871.02
+2024-10,28385.27
+2024-11,28345.56
+2024-12,31385.38
+2025-01,36903.77
+2025-02,16877.22
+2025-03,48570.61
+2025-04,30041.72
+2025-05,45947.95
+2025-06,17646.78
+2025-07,21498.44
