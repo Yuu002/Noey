@@ -1,31 +1,49 @@
 import pandas as pd
-from statsmodels.tsa.stattools import adfuller, kpss
+import numpy as np
+import pickle
+from sklearn.metrics import mean_absolute_error
+from statsmodels.tsa.arima.model import ARIMA
 
-def find_d(series, max_d=2, alpha=0.05, verbose=True):
-    y = series.copy()
+# config
+data_path = "sale_forecast_model/data/processed/monthly_sales.csv"
+output_path = "sale_forecast_model/models/arima_111.pkl"
 
-    for d in range(max_d+1):
-        adf_p = adfuller(y.dropna(), regression="ct")[1]
-        kpss_p = kpss(y.dropna(), regression="c", nlags="auto")[1]
-
-        if verbose:
-            print(f"d = {d} | ADF p-value = {adf_p:.4f} | KPSS p-value = {kpss_p:.4f}")
-
-        if adf_p < alpha and kpss_p > alpha:
-                print(f"Stationary ที่ d = {d}")
-                return d
-        y = y.diff()
-
-    if verbose:
-        print(" ยังไม่ได้ Stationary แม้ diff สูงสุดแล้ว")
-    return max_d
-
-df = pd.read_csv("sale_forecast_model/data/processed/monthly_sales.csv")
-df["month"] = pd.to_datetime(df["month"])
-df.set_index("month", inplace=True)
+# load data
+df = pd.read_csv(data_path)
 
 y = df["sales"]
-train = y.iloc[:23]
+months = df["month"]
 
-d = find_d(train)
-print("select d =", d)
+# train/test split
+train = y.iloc[:23]
+test = y.iloc[23:]
+
+test_months = months.iloc[23:].reset_index(drop=True)
+test = test.reset_index(drop=True)
+
+print(f"Total data: {len(y)}")
+print(f"Train size: {len(train)}")
+print(f"Test size: {len(test)}")
+
+# train ARIMA model(1,1,1)
+model = ARIMA(train, order=(0,0,1))
+fit = model.fit()
+
+# forecast
+forecast = fit.forecast(steps=len(test))
+forecast = pd.Series(forecast).reset_index(drop=True)
+
+# evaluate
+mae = mean_absolute_error(test, forecast)
+mape = np.mean(np.abs((test-forecast)/test))*100
+smape = np.mean(2*np.abs(forecast-test)/(np.abs(test)+np.abs(forecast)))*100
+
+print("\nTest Result")
+for i in range(len(test)):
+    print(f"{test_months[i]} | actual: {test[i]:.2f} | forecast: {forecast[i]:.2f}")
+
+print(f"\nMAE: {mae:2f}")
+print(f"MAPE: {mape:2f}%")
+print(f"sMAPE: {smape:2f}%")
+
+# save
