@@ -1,26 +1,31 @@
-month,sales
-2023-07,22296.34
-2023-08,49442.34
-2023-09,35969.26
-2023-10,45420.09
-2023-11,19346.71
-2023-12,52895.06
-2024-01,40436.16
-2024-02,22921.78
-2024-03,34038.47
-2024-04,31790.49
-2024-05,31645.83
-2024-06,27161.44
-2024-07,36234.8
-2024-08,46041.91
-2024-09,47871.02
-2024-10,28385.27
-2024-11,28345.56
-2024-12,31385.38
-2025-01,36903.77
-2025-02,16877.22
-2025-03,48570.61
-2025-04,30041.72
-2025-05,45947.95
-2025-06,17646.78
-2025-07,21498.44
+import pandas as pd
+from statsmodels.tsa.stattools import adfuller, kpss
+
+def find_d(series, max_d=2, alpha=0.05, verbose=True):
+    y = series.copy()
+
+    for d in range(max_d+1):
+        adf_p = adfuller(y.dropna(), regression="ct")[1]
+        kpss_p = kpss(y.dropna(), regression="c", nlags="auto")[1]
+
+        if verbose:
+            print(f"d = {d} | ADF p-value = {adf_p:.4f} | KPSS p-value = {kpss_p:.4f}")
+
+        if adf_p < alpha and kpss_p > alpha:
+                print(f"Stationary ที่ d = {d}")
+                return d
+        y = y.diff()
+
+    if verbose:
+        print(" ยังไม่ได้ Stationary แม้ diff สูงสุดแล้ว")
+    return max_d
+
+df = pd.read_csv("sale_forecast_model/data/processed/monthly_sales.csv")
+df["month"] = pd.to_datetime(df["month"])
+df.set_index("month", inplace=True)
+
+y = df["sales"]
+train = y.iloc[:23]
+
+d = find_d(train)
+print("select d =", d)
