@@ -1,3 +1,31 @@
+month,sales
+2023-07,22296.34
+2023-08,49442.34
+2023-09,35969.26
+2023-10,45420.09
+2023-11,19346.71
+2023-12,52895.06
+2024-01,40436.16
+2024-02,22921.78
+2024-03,34038.47
+2024-04,31790.49
+2024-05,31645.83
+2024-06,27161.44
+2024-07,36234.8
+2024-08,46041.91
+2024-09,47871.02
+2024-10,28385.27
+2024-11,28345.56
+2024-12,31385.38
+2025-01,36903.77
+2025-02,16877.22
+2025-03,48570.61
+2025-04,30041.72
+2025-05,45947.95
+2025-06,17646.78
+2025-07,21498.44
+
+train_model.py
 import pandas as pd
 import numpy as np
 import pickle
@@ -6,7 +34,7 @@ from statsmodels.tsa.arima.model import ARIMA
 
 # config
 data_path = "sale_forecast_model/data/processed/monthly_sales.csv"
-output_path = "sale_forecast_model/models/arima_111.pkl"
+output_path = "sale_forecast_model/models/arima_model.pkl"
 
 # load data
 df = pd.read_csv(data_path)
@@ -47,3 +75,88 @@ print(f"MAPE: {mape:2f}%")
 print(f"sMAPE: {smape:2f}%")
 
 # save
+with open(output_path, "wb") as f:
+    pickle.dump(fit, f)
+print(f"\nModel save to {output_path}")
+
+train_all_model.py
+import pandas as pd
+import numpy as np
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+from statsmodels.tsa.holtwinters import SimpleExpSmoothing, Holt
+from statsmodels.tsa.arima.model import ARIMA
+
+# load data
+df = pd.read_csv("sale_forecast_model/data/processed/monthly_sales.csv")
+
+y = df["sales"]
+months = df["month"]
+
+# train/test
+train = y.iloc[:23]
+test  = y.iloc[23:]
+
+test_months = months.iloc[23:].reset_index(drop=True)
+test = test.reset_index(drop=True)
+
+# evaluate function
+def evaluate(name, actual, pred):
+    pred = np.asarray(pred)
+
+    mae = mean_absolute_error(actual, pred)
+    mape = np.mean(2*np.abs(pred-actual)/(np.abs(actual)+np.abs(pred)))*100
+    return {
+        "model": name,
+        "MAE": round(mae, 2),
+        "MAPE": round(mape, 2),
+        test_months.iloc[0]: round(pred[0], 2),
+        test_months.iloc[1]: round(pred[1], 2)}
+
+results = []
+
+# 1) naive model
+naive_forecast = np.repeat(train.iloc[-1], len(test))
+results.append(evaluate("Naive", test, naive_forecast))
+
+# 2) MA3 / MA4 / MA5 / MA6 model
+for w in [3, 4, 5, 6]:
+    ma = train.rolling(window=w).mean()
+    forecast = np.repeat(ma.iloc[-1], len(test))
+    results.append(evaluate(f"MA{w}", test, forecast))
+
+# 3) SES model
+for alpha in [0.2, 0.3, 0.4, 0.5]:
+    model = SimpleExpSmoothing(train, initialization_method="estimated")
+    fit = model.fit(
+        smoothing_level=alpha,
+        optimized=False)
+    
+    forecast = fit.forecast(len(test))
+    results.append(evaluate(f"SES α={alpha}", test, forecast))
+
+# 4) HOLT model
+holt_params = [(0.3, 0.1), (0.4, 0.1), (0.4, 0.2)]
+for alpha, beta in holt_params:
+    model = Holt(train, initialization_method="estimated")
+    fit = model.fit(
+        smoothing_level=alpha,
+        smoothing_trend=beta,
+        optimized=False)
+    
+    forecast = fit.forecast(len(test))
+    results.append(evaluate(f"Holt a={alpha}, b={beta}", test, forecast))
+
+# 5) ARIMA model
+arima_orders = [(2,0,1), (1,1,1), (0,0,1), (2,1,1)]
+for order in arima_orders:
+    model = ARIMA(train, order=order)
+    fit = model.fit()
+    forecast = fit.forecast(len(test))
+    results.append(evaluate(f"ARIMA{order}", test, forecast))
+
+# result table
+result_df = pd.DataFrame(results)
+result_df = result_df.sort_values("MAE")
+
+print("\n===== MODEL COMPARISON (TEST MONTH FORECAST) =====")
+print(result_df.to_string(index=False))
