@@ -3,7 +3,7 @@ Odoo Server Error
 RPC_ERROR
 Odoo Server Error
 
-Occured on localhost:10018 on model ir.module.module on 2026-01-12 09:41:01 GMT
+Occured on localhost:10018 on model ir.module.module on 2026-01-12 10:09:16 GMT
 
 Traceback (most recent call last):
   File "/usr/lib/python3/dist-packages/odoo/http.py", line 2166, in _transactioning
@@ -56,19 +56,39 @@ Traceback (most recent call last):
   File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 365, in load_marked_modules
     loaded, processed = load_module_graph(
                         ^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 186, in load_module_graph
-    load_openerp_module(package.name)
-  File "/usr/lib/python3/dist-packages/odoo/modules/module.py", line 384, in load_openerp_module
-    __import__(qualname)
-  File "/mnt/extra-addons/sales_forecast/__init__.py", line 1, in <module>
-    from . import models
-  File "/mnt/extra-addons/sales_forecast/models/__init__.py", line 1, in <module>
-    from . import sales_monthly_forecast
-  File "/mnt/extra-addons/sales_forecast/models/sales_monthly_forecast.py", line 7, in <module>
-    from .predict import forecast_next_month
-  File "/mnt/extra-addons/sales_forecast/models/predict.py", line 3, in <module>
-    import pandas as pd
-ModuleNotFoundError: No module named 'pandas'
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 228, in load_module_graph
+    load_data(env, idref, mode, kind='data', package=package)
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 72, in load_data
+    tools.convert_file(env, package.name, filename, idref, mode, noupdate, kind)
+  File "/usr/lib/python3/dist-packages/odoo/tools/convert.py", line 615, in convert_file
+    convert_xml_import(env, module, fp, idref, mode, noupdate)
+  File "/usr/lib/python3/dist-packages/odoo/tools/convert.py", line 686, in convert_xml_import
+    obj.parse(doc.getroot())
+  File "/usr/lib/python3/dist-packages/odoo/tools/convert.py", line 601, in parse
+    self._tag_root(de)
+  File "/usr/lib/python3/dist-packages/odoo/tools/convert.py", line 555, in _tag_root
+    raise ParseError(msg) from None  # Restart with "--log-handler odoo.tools.convert:DEBUG" for complete traceback
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+odoo.tools.convert.ParseError: while parsing /mnt/extra-addons/sales_forecast/views/sale_monthly_forecast_view.xml:33
+Error while validating view near:
+
+
+                    <group>
+                        <label string="Description"/>
+                        <p>
+                            This forecast is generated using a trained ARIMA model
+
+Label tag must contain a "for". To match label style without corresponding field or button, use 'class="o_form_label"'.
+
+View error context:
+{'file': '/mnt/extra-addons/sales_forecast/views/sale_monthly_forecast_view.xml',
+ 'line': 17,
+ 'name': 'sale.monthly.forecast.form',
+ 'view': ir.ui.view(3557,),
+ 'view.model': 'sale.monthly.forecast',
+ 'view.parent': ir.ui.view(),
+ 'xmlid': 'view_sale_monthly_forecast_form'}
+
 
 The above server error caused the following client error:
 RPC_ERROR: Odoo Server Error
