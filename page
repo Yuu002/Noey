@@ -1,126 +1,77 @@
-# -*- coding: utf-8 -*-
+Odoo Server Error
 
-from odoo import models, fields, api
-from odoo.exceptions import UserError
-from collections import defaultdict
-from datetime import datetime
+RPC_ERROR
+Odoo Server Error
 
-from .predict import forecast_next_month
+Occured on localhost:10018 on model ir.module.module on 2026-01-12 09:41:01 GMT
 
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2166, in _transactioning
+    return service_model.retrying(func, env=self.env)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/service/model.py", line 156, in retrying
+    result = func()
+             ^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2133, in _serve_ir_http
+    response = self.dispatcher.dispatch(rule.endpoint, args)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2381, in dispatch
+    result = self.request.registry['ir.http']._dispatch(endpoint)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_http.py", line 333, in _dispatch
+    result = endpoint(**request.params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/http.py", line 754, in route_wrapper
+    result = endpoint(self, *args, **params_ok)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/addons/web/controllers/dataset.py", line 42, in call_button
+    action = call_kw(request.env[model], method, args, kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/api.py", line 535, in call_kw
+    result = getattr(recs, name)(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/decorator.py", line 232, in fun
+    return caller(func, *(extras + args), **kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_module.py", line 75, in check_and_log
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_module.py", line 487, in button_immediate_install
+    return self._button_immediate_function(self.env.registry[self._name].button_install)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_module.py", line 611, in _button_immediate_function
+    registry = modules.registry.Registry.new(self._cr.dbname, update_module=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/decorator.py", line 232, in fun
+    return caller(func, *(extras + args), **kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 97, in locked
+    return func(inst, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/modules/registry.py", line 129, in new
+    odoo.modules.load_modules(registry, force_demo, status, update_module)
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 489, in load_modules
+    processed_modules += load_marked_modules(env, graph,
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 365, in load_marked_modules
+    loaded, processed = load_module_graph(
+                        ^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 186, in load_module_graph
+    load_openerp_module(package.name)
+  File "/usr/lib/python3/dist-packages/odoo/modules/module.py", line 384, in load_openerp_module
+    __import__(qualname)
+  File "/mnt/extra-addons/sales_forecast/__init__.py", line 1, in <module>
+    from . import models
+  File "/mnt/extra-addons/sales_forecast/models/__init__.py", line 1, in <module>
+    from . import sales_monthly_forecast
+  File "/mnt/extra-addons/sales_forecast/models/sales_monthly_forecast.py", line 7, in <module>
+    from .predict import forecast_next_month
+  File "/mnt/extra-addons/sales_forecast/models/predict.py", line 3, in <module>
+    import pandas as pd
+ModuleNotFoundError: No module named 'pandas'
 
-class SaleMonthlyForecast(models.Model):
-    _name = "sale.monthly.forecast"
-    _description = "Monthly Sales Forecast (ARIMA)"
-    _rec_name = "name"
-
-    name = fields.Char(
-        string="Name",
-        default="Monthly Sales Forecast",
-        readonly=True
-    )
-
-    forecast_month = fields.Char(
-        string="Forecast Month",
-        readonly=True
-    )
-
-    forecast_sales = fields.Float(
-        string="Forecast Sales",
-        readonly=True
-    )
-
-    # ==================================================
-    # CORE METHOD
-    # ==================================================
-    def action_compute_forecast(self):
-        """
-        1) Pull sale.order from Odoo
-        2) Aggregate sales by month
-        3) Call predict.py
-        4) Save forecast result
-        """
-
-        # ------------------------------
-        # 1) Fetch confirmed sales orders
-        # ------------------------------
-        orders = self.env["sale.order"].search([
-            ("state", "in", ["sale", "done"]),
-            ("date_order", "!=", False)
-        ], order="date_order ASC")
-
-        if not orders:
-            raise UserError("No confirmed sales orders found.")
-
-        # ------------------------------
-        # 2) Aggregate monthly sales
-        # ------------------------------
-        monthly_totals = defaultdict(float)
-
-        for order in orders:
-            order_date = fields.Datetime.to_datetime(order.date_order)
-            month_key = order_date.strftime("%Y-%m")
-            monthly_totals[month_key] += order.amount_total
-
-        # sort by month
-        monthly_sales = [
-            {"month": month, "sales": monthly_totals[month]}
-            for month in sorted(monthly_totals.keys())
-        ]
-
-        # ------------------------------
-        # 3) Call forecast function
-        # ------------------------------
-        try:
-            result = forecast_next_month(monthly_sales)
-        except Exception as e:
-            raise UserError(str(e))
-
-        # ------------------------------
-        # 4) Save result to record
-        # ------------------------------
-        self.write({
-            "forecast_month": result["forecast_month"],
-            "forecast_sales": result["forecast_sales"],
-        })
-
-        return True
-
-    # ==================================================
-    # DATA FOR CHART (USED BY JS)
-    # ==================================================
-    def get_monthly_sales_with_forecast(self):
-        """
-        Return historical monthly sales + forecast
-        Used by JS to draw line chart
-        """
-
-        orders = self.env["sale.order"].search([
-            ("state", "in", ["sale", "done"]),
-            ("date_order", "!=", False)
-        ], order="date_order ASC")
-
-        monthly_totals = defaultdict(float)
-
-        for order in orders:
-            order_date = fields.Datetime.to_datetime(order.date_order)
-            month_key = order_date.strftime("%Y-%m")
-            monthly_totals[month_key] += order.amount_total
-
-        data = [
-            {
-                "month": month,
-                "sales": monthly_totals[month],
-                "type": "actual"
-            }
-            for month in sorted(monthly_totals.keys())
-        ]
-
-        # add forecast point if exists
-        if self.forecast_month and self.forecast_sales:
-            data.append({
-                "month": self.forecast_month,
-                "sales": self.forecast_sales,
-                "type": "forecast"
-            })
-
-        return data
+The above server error caused the following client error:
+RPC_ERROR: Odoo Server Error
+    RPC_ERROR
+        at makeErrorFromResponse (http://localhost:10018/web/assets/dc6d148/web.assets_web.min.js:3166:163)
+        at XMLHttpRequest.<anonymous> (http://localhost:10018/web/assets/dc6d148/web.assets_web.min.js:3171:13)
