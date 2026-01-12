@@ -1,125 +1,67 @@
 import pandas as pd
 import numpy as np
-from sklearn.metrics import mean_absolute_error
-from statsmodels.tsa.holtwinters import SimpleExpSmoothing, Holt
+import pickle
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 from statsmodels.tsa.arima.model import ARIMA
 
+# config
+data_path = "sale_forecast_model/data/processed/monthly_sales.csv"
+output_path = "sale_forecast_model/models/arima_model.pkl"
+
+arima_order = (0,0,1)
+min_train_size = 12
+forecast_horizon = 1
+
 # load data
-df = pd.read_csv("sale_forecast_model/data/processed/monthly_sales.csv")
+df = pd.read_csv(data_path)
 
 y = df["sales"].reset_index(drop=True)
 months = df["month"].reset_index(drop=True)
 
-# parameters
-min_train_size = 12
-forecast_horizon = 1
+print(f"Total odservations: {len(y)}")
 
-# evaluation function
-def evaluate(name, actual, pred):
-    actual = np.asarray(actual)
-    pred = np.asarray(pred)
-
-    mae = mean_absolute_error(actual, pred)
-    mape = np.mean(2*np.abs(pred-actual)/(np.abs(actual)+np.abs(pred))) * 100
-
-    return {
-        "model": name,
-        "MAE": round(mae, 2),
-        "MAPE": round(mape, 2)
-    }
-
-results = []
-
-# ===============================
-# 1) NAIVE
-# ===============================
-actuals, preds = [], []
+# walk-forward validation
+actuals = []
+predictions = []
+test_months = []
 
 for t in range(min_train_size, len(y)):
-    train = y[:t]
-    actuals.append(y[t])
-    preds.append(train.iloc[-1])
+    train_y = y.iloc[:t]
+    test_y = y.iloc[t]
 
-results.append(evaluate("Naive", actuals, preds))
+    model = ARIMA(train_y, order=arima_order)
+    fit = model.fit()
 
-# ===============================
-# 2) Moving Average
-# ===============================
-for w in [3, 4, 5, 6]:
-    actuals, preds = [], []
+    forecast = fit.forecast(steps=forecast_horizon).iloc[0]
 
-    for t in range(min_train_size, len(y)):
-        train = y[:t]
-        if len(train) < w:
-            continue
-        actuals.append(y[t])
-        preds.append(train.rolling(w).mean().iloc[-1])
+    actuals.append(test_y)
+    predictions.append(forecast)
+    test_months.append(months[t])
 
-    results.append(evaluate(f"MA{w}", actuals, preds))
+# evaluation
+actuals = np.array(actuals)
+predictions = np.array(predictions)
 
-# ===============================
-# 3) SES
-# ===============================
-for alpha in [0.2, 0.3, 0.4, 0.5]:
-    actuals, preds = [], []
+mae = mean_absolute_error(actuals, predictions)
+rmse = np.sqrt(mean_squared_error(actuals, predictions))
+mape = np.mean(np.abs((actuals-predictions)/actuals))*100
 
-    for t in range(min_train_size, len(y)):
-        train = y[:t]
-        model = SimpleExpSmoothing(train, initialization_method="estimated")
-        fit = model.fit(smoothing_level=alpha, optimized=False)
+print("\nWalk-forward validation result")
 
-        forecast = fit.forecast(forecast_horizon)
-        actuals.append(y[t])
-        preds.append(forecast.iloc[0])
+for m, a, p in zip(test_months, actuals, predictions):
+    print(f"{m} | actual: {a:2f} | forecast: {p:2f}")
 
-    results.append(evaluate(f"SES α={alpha}", actuals, preds))
+print(f"\nMAE: {mae:2f}")
+print(f"\nRMSE: {mae:2f}")
+print(f"\nMAPE: {mape:2f}%")
 
-# ===============================
-# 4) HOLT
-# ===============================
-holt_params = [(0.3, 0.1), (0.4, 0.1), (0.4, 0.2)]
+# traian final model
+final_model = ARIMA(y, order=arima_order)
+final_fit = final_model.fit()
 
-for alpha, beta in holt_params:
-    actuals, preds = [], []
+print(f"\nFinal ARIMA model trained with full data")
 
-    for t in range(min_train_size, len(y)):
-        train = y[:t]
-        model = Holt(train, initialization_method="estimated")
-        fit = model.fit(
-            smoothing_level=alpha,
-            smoothing_trend=beta,
-            optimized=False
-        )
+#with open(output_path, "wb") as f:
+#    pickle.dump(final_fit, f)
 
-        forecast = fit.forecast(forecast_horizon)
-        actuals.append(y[t])
-        preds.append(forecast.iloc[0])
-
-    results.append(evaluate(f"Holt a={alpha}, b={beta}", actuals, preds))
-
-# ===============================
-# 5) ARIMA
-# ===============================
-arima_orders = [(2,0,1), (1,1,1), (0,0,1), (2,1,1)]
-
-for order in arima_orders:
-    actuals, preds = [], []
-
-    for t in range(min_train_size, len(y)):
-        train = y[:t]
-        model = ARIMA(train, order=order)
-        fit = model.fit()
-
-        forecast = fit.forecast(forecast_horizon)
-        actuals.append(y[t])
-        preds.append(forecast.iloc[0])
-
-    results.append(evaluate(f"ARIMA{order}", actuals, preds))
-
-# ===============================
-# Result table
-# ===============================
-result_df = pd.DataFrame(results).sort_values("MAE")
-
-print("\n===== WALK-FORWARD VALIDATION RESULTS =====")
-print(result_df.to_string(index=False))
+#print(f"Model save to: {output_path}")
