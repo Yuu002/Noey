@@ -1,78 +1,279 @@
-Odoo Server Error
+predict.py
+# -*- coding: utf-8 -*-
 
-RPC_ERROR
-Odoo Server Error
+import pickle
+import pandas as pd
+from pathlib import Path
+from dateutil.relativedelta import relativedelta
 
-Occured on localhost:10018 on model ir.module.module on 2026-01-12 08:26:30 GMT
 
-Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2166, in _transactioning
-    return service_model.retrying(func, env=self.env)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/service/model.py", line 156, in retrying
-    result = func()
-             ^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2133, in _serve_ir_http
-    response = self.dispatcher.dispatch(rule.endpoint, args)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2381, in dispatch
-    result = self.request.registry['ir.http']._dispatch(endpoint)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_http.py", line 333, in _dispatch
-    result = endpoint(**request.params)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/http.py", line 754, in route_wrapper
-    result = endpoint(self, *args, **params_ok)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/web/controllers/dataset.py", line 42, in call_button
-    action = call_kw(request.env[model], method, args, kwargs)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/api.py", line 535, in call_kw
-    result = getattr(recs, name)(*args, **kwargs)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/decorator.py", line 232, in fun
-    return caller(func, *(extras + args), **kw)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_module.py", line 75, in check_and_log
-    return method(self, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_module.py", line 487, in button_immediate_install
-    return self._button_immediate_function(self.env.registry[self._name].button_install)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_module.py", line 611, in _button_immediate_function
-    registry = modules.registry.Registry.new(self._cr.dbname, update_module=True)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/decorator.py", line 232, in fun
-    return caller(func, *(extras + args), **kw)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 97, in locked
-    return func(inst, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/modules/registry.py", line 129, in new
-    odoo.modules.load_modules(registry, force_demo, status, update_module)
-  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 489, in load_modules
-    processed_modules += load_marked_modules(env, graph,
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 365, in load_marked_modules
-    loaded, processed = load_module_graph(
-                        ^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 186, in load_module_graph
-    load_openerp_module(package.name)
-  File "/usr/lib/python3/dist-packages/odoo/modules/module.py", line 384, in load_openerp_module
-    __import__(qualname)
-  File "/mnt/extra-addons/sales_forecast/__init__.py", line 1, in <module>
-    from . import models
-  File "/mnt/extra-addons/sales_forecast/models/__init__.py", line 1, in <module>
-    from . import sales_monthly_forecast
-  File "/mnt/extra-addons/sales_forecast/models/sales_monthly_forecast.py", line 5, in <module>
-    from .predict import forecast_next_month
-  File "/mnt/extra-addons/sales_forecast/models/predict.py", line 71
+# ==================================================
+# PATH CONFIG (ODOO-SAFE)
+# ==================================================
+BASE_DIR = Path(__file__).resolve().parents[1]
+MODEL_PATH = BASE_DIR / "data" / "arima_model.pkl"
+
+
+# ==================================================
+# LOAD TRAINED MODEL
+# ==================================================
+def load_model():
+    if not MODEL_PATH.exists():
+        raise FileNotFoundError(
+            f"ARIMA model not found at {MODEL_PATH}"
+        )
+
+    with open(MODEL_PATH, "rb") as f:
+        model = pickle.load(f)
+
+    return model
+
+
+# ==================================================
+# FORECAST NEXT MONTH
+# ==================================================
+def forecast_next_month(monthly_sales):
+    """
+    monthly_sales : list of dict
+    [
+        {"month": "2023-01", "sales": 1200.0},
+        ...
+    ]
+    """
+
+    if not monthly_sales or len(monthly_sales) < 12:
+        raise ValueError(
+            "At least 12 months of sales data are required."
+        )
+
+    # Convert to DataFrame
+    df = pd.DataFrame(monthly_sales)
+    df["month"] = pd.to_datetime(df["month"])
+    df = df.sort_values("month")
+
+    y = df["sales"].astype(float)
+
+    # Load model
+    model = load_model()
+
+    # Forecast 1 step ahead
+    forecast_value = model.forecast(steps=1).iloc[0]
+
+    # Next month
+    last_month = df["month"].iloc[-1]
+    next_month = last_month + relativedelta(months=1)
+
     return {
-    ^
-SyntaxError: 'return' outside function
+        "forecast_month": next_month.strftime("%Y-%m"),
+        "forecast_sales": round(float(forecast_value), 2),
+        "model": "ARIMA",
+    }
 
-The above server error caused the following client error:
-RPC_ERROR: Odoo Server Error
-    RPC_ERROR
-        at makeErrorFromResponse (http://localhost:10018/web/assets/dc6d148/web.assets_web.min.js:3166:163)
-        at XMLHttpRequest.<anonymous> (http://localhost:10018/web/assets/dc6d148/web.assets_web.min.js:3171:13)
+manifest.py
+# -*- coding: utf-8 -*-
+
+{
+    "name": "Monthly Sales Forecast",
+    "version": "18.0.1.0.0",
+    "category": "Sales",
+    "summary": "Forecast monthly sales using ARIMA",
+    "description": """
+        Forecast monthly sales one month ahead
+        using a trained ARIMA model and display
+        the result as a line chart.
+    """,
+    "author": "Your Name",
+    "depends": ["sale", "web"],
+    "data": [
+        "security/ir.model.access.csv",
+        "views/sale_monthly_forecast_view.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "sale_monthly_forecast/static/src/js/sale_monthly_forecast_chart.js",
+        ],
+    },
+    "installable": True,
+    "application": False,
+}
+
+xml
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===================================================== -->
+    <!-- FORM ACTION (Compute Forecast) -->
+    <!-- ===================================================== -->
+    <record id="action_sale_monthly_forecast" model="ir.actions.act_window">
+        <field name="name">Monthly Sales Forecast</field>
+        <field name="res_model">sale.monthly.forecast</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+    </record>
+
+    <!-- ===================================================== -->
+    <!-- CLIENT ACTION (Chart) -->
+    <!-- ===================================================== -->
+    <record id="action_sale_monthly_forecast_chart" model="ir.actions.client">
+        <field name="name">Monthly Sales Forecast Chart</field>
+        <field name="tag">sale_monthly_forecast_chart</field>
+    </record>
+
+    <!-- ===================================================== -->
+    <!-- MENU -->
+    <!-- ===================================================== -->
+    <menuitem
+        id="menu_sale_monthly_forecast_root"
+        name="Sales Forecast"
+        parent="sale.sale_menu_root"
+        sequence="30"/>
+
+    <menuitem
+        id="menu_sale_monthly_forecast"
+        name="Monthly Forecast"
+        parent="menu_sale_monthly_forecast_root"
+        action="action_sale_monthly_forecast"
+        sequence="10"/>
+
+    <!-- ===================================================== -->
+    <!-- FORM VIEW -->
+    <!-- ===================================================== -->
+    <record id="view_sale_monthly_forecast_form" model="ir.ui.view">
+        <field name="name">sale.monthly.forecast.form</field>
+        <field name="model">sale.monthly.forecast</field>
+        <field name="arch" type="xml">
+
+            <form string="Monthly Sales Forecast">
+                <header>
+                    <!-- Compute forecast -->
+                    <button
+                        name="action_compute_forecast"
+                        type="object"
+                        string="Compute Forecast"
+                        class="btn-primary"/>
+
+                    <!-- Open chart -->
+                    <button
+                        name="%(action_sale_monthly_forecast_chart)d"
+                        type="action"
+                        string="View Chart"
+                        class="btn-secondary"/>
+                </header>
+
+                <sheet>
+                    <group>
+                        <field name="forecast_month" readonly="1"/>
+                        <field name="forecast_sales" readonly="1"/>
+                    </group>
+
+                    <group>
+                        <label string="Description"/>
+                        <p>
+                            This forecast is generated using a trained ARIMA model
+                            based on historical monthly sales data.
+                        </p>
+                    </group>
+                </sheet>
+            </form>
+
+        </field>
+    </record>
+
+    <!-- ===================================================== -->
+    <!-- OWL TEMPLATE FOR CHART (USED BY JS) -->
+    <!-- ===================================================== -->
+    <template id="sale_monthly_forecast_chart_template"
+              name="Monthly Sales Forecast Chart">
+
+        <div class="o_form_view">
+            <h2>Monthly Sales Forecast</h2>
+            <canvas t-ref="chart" style="width:100%; height:400px;"/>
+        </div>
+
+    </template>
+
+</odoo>
+
+js
+/** @odoo-module **/
+
+import { registry } from "@web/core/registry";
+import { Component, onMounted, useRef } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
+
+export class SaleMonthlyForecastChart extends Component {
+    setup() {
+        this.orm = useService("orm");
+        this.chartRef = useRef("chart");
+
+        onMounted(() => {
+            this.renderChart();
+        });
+    }
+
+    async renderChart() {
+        // เรียก method จาก Python
+        const result = await this.orm.call(
+            "sale.monthly.forecast",
+            "get_forecast_chart_data",
+            [],
+            {}
+        );
+
+        if (!result) {
+            return;
+        }
+
+        const labels = [...result.labels, result.forecast_label];
+        const actualData = [...result.actual, null];
+        const forecastData = new Array(result.actual.length).fill(null);
+        forecastData.push(result.forecast_value);
+
+        const ctx = this.chartRef.el.getContext("2d");
+
+        new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Actual Sales",
+                        data: actualData,
+                        borderWidth: 2,
+                        tension: 0.3,
+                    },
+                    {
+                        label: "Forecast",
+                        data: forecastData,
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        tension: 0.3,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: "top",
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                    },
+                },
+            },
+        });
+    }
+}
+
+SaleMonthlyForecastChart.template = "sale_monthly_forecast.Chart";
+registry.category("actions").add(
+    "sale_monthly_forecast_chart",
+    SaleMonthlyForecastChart
+);
+
+csv
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_sale_monthly_forecast,sale.monthly.forecast,model_sale_monthly_forecast,,1,1,1,0
