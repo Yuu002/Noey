@@ -1,67 +1,26 @@
-import pandas as pd
-import numpy as np
-import pickle
-from sklearn.metrics import mean_absolute_error, mean_squared_error
-from statsmodels.tsa.arima.model import ARIMA
-
-# config
-data_path = "sale_forecast_model/data/processed/monthly_sales.csv"
-output_path = "sale_forecast_model/models/arima_model.pkl"
-
-arima_order = (0,0,1)
-min_train_size = 12
-forecast_horizon = 1
-
-# load data
-df = pd.read_csv(data_path)
-
-y = df["sales"].reset_index(drop=True)
-months = df["month"].reset_index(drop=True)
-
-print(f"Total odservations: {len(y)}")
-
-# walk-forward validation
-actuals = []
-predictions = []
-test_months = []
-
-for t in range(min_train_size, len(y)):
-    train_y = y.iloc[:t]
-    test_y = y.iloc[t]
-
-    model = ARIMA(train_y, order=arima_order)
-    fit = model.fit()
-
-    forecast = fit.forecast(steps=forecast_horizon).iloc[0]
-
-    actuals.append(test_y)
-    predictions.append(forecast)
-    test_months.append(months[t])
-
-# evaluation
-actuals = np.array(actuals)
-predictions = np.array(predictions)
-
-mae = mean_absolute_error(actuals, predictions)
-rmse = np.sqrt(mean_squared_error(actuals, predictions))
-mape = np.mean(np.abs((actuals-predictions)/actuals))*100
-
-print("\nWalk-forward validation result")
-
-for m, a, p in zip(test_months, actuals, predictions):
-    print(f"{m} | actual: {a:2f} | forecast: {p:2f}")
-
-print(f"\nMAE: {mae:2f}")
-print(f"\nRMSE: {mae:2f}")
-print(f"\nMAPE: {mape:2f}%")
-
-# traian final model
-final_model = ARIMA(y, order=arima_order)
-final_fit = final_model.fit()
-
-print(f"\nFinal ARIMA model trained with full data")
-
-#with open(output_path, "wb") as f:
-#    pickle.dump(final_fit, f)
-
-#print(f"Model save to: {output_path}")
+month,sales
+2023-07,22296.34
+2023-08,49442.34
+2023-09,35969.26
+2023-10,45420.09
+2023-11,19346.71
+2023-12,52895.06
+2024-01,40436.16
+2024-02,22921.78
+2024-03,34038.47
+2024-04,31790.49
+2024-05,31645.83
+2024-06,27161.44
+2024-07,36234.8
+2024-08,46041.91
+2024-09,47871.02
+2024-10,28385.27
+2024-11,28345.56
+2024-12,31385.38
+2025-01,36903.77
+2025-02,16877.22
+2025-03,48570.61
+2025-04,30041.72
+2025-05,45947.95
+2025-06,17646.78
+2025-07,21498.44
