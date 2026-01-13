@@ -3,13 +3,13 @@ Odoo Client Error
 UncaughtPromiseError > KeyNotFoundError
 Uncaught Promise > Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
 
-Occured on localhost:10018 on 2026-01-13 03:40:43 GMT
+Occured on localhost:10018 on 2026-01-13 03:48:28 GMT
 
 KeyNotFoundError: Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
     Error: Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
-        at Registry.get (http://localhost:10018/web/assets/5358e84/web.assets_web.min.js:3695:76)
-        at _executeClientAction (http://localhost:10018/web/assets/5358e84/web.assets_web.min.js:10093:87)
-        at doAction (http://localhost:10018/web/assets/5358e84/web.assets_web.min.js:10110:192)
-        at async Object.doActionButton (http://localhost:10018/web/assets/5358e84/web.assets_web.min.js:10121:249)
-        at async execute (http://localhost:10018/web/assets/5358e84/web.assets_web.min.js:9720:301)
-        at async executeButtonCallback (http://localhost:10018/web/assets/5358e84/web.assets_web.min.js:9713:34)
+        at Registry.get (http://localhost:10018/web/assets/6137eb3/web.assets_web.min.js:3695:76)
+        at _executeClientAction (http://localhost:10018/web/assets/6137eb3/web.assets_web.min.js:10093:87)
+        at doAction (http://localhost:10018/web/assets/6137eb3/web.assets_web.min.js:10110:192)
+        at async Object.doActionButton (http://localhost:10018/web/assets/6137eb3/web.assets_web.min.js:10121:249)
+        at async execute (http://localhost:10018/web/assets/6137eb3/web.assets_web.min.js:9720:301)
+        at async executeButtonCallback (http://localhost:10018/web/assets/6137eb3/web.assets_web.min.js:9713:34)
