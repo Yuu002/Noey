@@ -37,3 +37,77 @@ RPC_ERROR: Odoo Server Error
     RPC_ERROR
         at makeErrorFromResponse (http://localhost:10018/web/assets/debug/web.assets_web.js:29959:19) (/web/static/src/core/network/rpc.js:34)
         at XMLHttpRequest.<anonymous> (http://localhost:10018/web/assets/debug/web.assets_web.js:30013:27) (/web/static/src/core/network/rpc.js:88)
+
+
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\js\sales_monthly_forecast_chart.js
+/** @odoo-module **/
+
+import { registry } from "@web/core/registry";
+import { Component, onMounted, useRef } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
+
+export class SaleMonthlyForecastChart extends Component {
+    setup() {
+        this.orm = useService("orm");
+        this.chartRef = useRef("chart");
+
+        onMounted(() => {
+            this.renderChart();
+        });
+    }
+
+    async renderChart() {
+        const recordId = this.props.action.context.active_id;
+
+        const result = await this.orm.call(
+            "sale.monthly.forecast",
+            "get_forecast_chart_data", [recordId], {}
+        );
+
+        if (!result || !this.chartRef.el) {
+            return;
+        }
+
+        const ctx = this.chartRef.el.getContext("2d");
+
+        new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: result.labels,
+                datasets: [{
+                        label: "Actual Sales",
+                        data: result.actual,
+                        borderWidth: 2,
+                        tension: 0.3,
+                    },
+                    {
+                        label: "Forecast",
+                        data: result.forecast,
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        tension: 0.3,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: "top",
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                    },
+                },
+            },
+        });
+    }
+}
+
+SaleMonthlyForecastChart.template = "sale_monthly_forecast_chart_template";
+registry.category("actions").add(
+    "sale_monthly_forecast_chart",
+    SaleMonthlyForecastChart
+);
