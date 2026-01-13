@@ -1,3 +1,81 @@
+Odoo Server Error
+
+RPC_ERROR
+Odoo Server Error
+
+Occured on localhost:10018 on model ir.module.module on 2026-01-13 09:42:32 GMT
+
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2166, in _transactioning
+    return service_model.retrying(func, env=self.env)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/service/model.py", line 156, in retrying
+    result = func()
+             ^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2133, in _serve_ir_http
+    response = self.dispatcher.dispatch(rule.endpoint, args)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2381, in dispatch
+    result = self.request.registry['ir.http']._dispatch(endpoint)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_http.py", line 333, in _dispatch
+    result = endpoint(**request.params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/http.py", line 754, in route_wrapper
+    result = endpoint(self, *args, **params_ok)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/addons/web/controllers/dataset.py", line 42, in call_button
+    action = call_kw(request.env[model], method, args, kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/api.py", line 535, in call_kw
+    result = getattr(recs, name)(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/decorator.py", line 232, in fun
+    return caller(func, *(extras + args), **kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_module.py", line 75, in check_and_log
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_module.py", line 487, in button_immediate_install
+    return self._button_immediate_function(self.env.registry[self._name].button_install)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_module.py", line 611, in _button_immediate_function
+    registry = modules.registry.Registry.new(self._cr.dbname, update_module=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/decorator.py", line 232, in fun
+    return caller(func, *(extras + args), **kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 97, in locked
+    return func(inst, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/modules/registry.py", line 129, in new
+    odoo.modules.load_modules(registry, force_demo, status, update_module)
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 489, in load_modules
+    processed_modules += load_marked_modules(env, graph,
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 365, in load_marked_modules
+    loaded, processed = load_module_graph(
+                        ^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 228, in load_module_graph
+    load_data(env, idref, mode, kind='data', package=package)
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 72, in load_data
+    tools.convert_file(env, package.name, filename, idref, mode, noupdate, kind)
+  File "/usr/lib/python3/dist-packages/odoo/tools/convert.py", line 609, in convert_file
+    with file_open(pathname, 'rb') as fp:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/tools/misc.py", line 248, in file_open
+    path = file_path(name, filter_ext=filter_ext, env=env)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/tools/misc.py", line 226, in file_path
+    raise FileNotFoundError("File not found: " + file_path)
+FileNotFoundError: File not found: sales_monthly_forecast/views/sale_monthly_forecast_view.xml
+
+The above server error caused the following client error:
+RPC_ERROR: Odoo Server Error
+    RPC_ERROR
+        at makeErrorFromResponse (http://localhost:10018/web/assets/debug/web.assets_web.js:29959:19)
+        at XMLHttpRequest.<anonymous> (http://localhost:10018/web/assets/debug/web.assets_web.js:30013:27)
+
 C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\js\sales_monthly_forecast_chart.js
 /** @odoo-module **/
 
@@ -59,28 +137,15 @@ class SaleMonthlyForecastChart extends Component {
 
 SaleMonthlyForecastChart.template = "sale_monthly_forecast_chart_template";
 
-/* mount component ลงใน form */
-document.addEventListener("DOMContentLoaded", () => {
-    const el = document.querySelector(".o_sale_monthly_forecast_chart");
-    if (!el) return;
-
+/* mount chart ลงใน form */
+const el = document.querySelector(".o_sale_monthly_forecast_chart");
+if (el) {
     mount(SaleMonthlyForecastChart, el, {
         props: {
-            recordId: parseInt(el.dataset.recordId),
+            recordId: Number(el.dataset.recordId),
         },
     });
-});
-
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\xml\sales_monthly_forecast_chart.xml
-<?xml version="1.0" encoding="utf-8"?>
-<templates xml:space="preserve">
-    <t t-name="sale_monthly_forecast_chart_template">
-        <div class="o_form_view">
-            <h2>Monthly Sales Forecast</h2>
-            <canvas t-ref="chart" style="width:100%; height:400px;"/>
-        </div>
-    </t>
-</templates>
+}
 
 C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sales_monthly_forecast_view.xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -144,9 +209,9 @@ C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sales_monthly_fore
 
                     <div
                         class="o_sale_monthly_forecast_chart"
-                        t-att-data-record-id="active_id"
+                        t-att-data-record-id="record.id"
                         style="width:100%; height:420px;"/>
-                        
+
                 </sheet>
             </form>
 
@@ -155,31 +220,111 @@ C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sales_monthly_fore
 
 </odoo>
 
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\__manifest__.py
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\models\sales_monthly_forecast.py
 # -*- coding: utf-8 -*-
-{
-    "name": "Monthly Sales Forecast",
-    "version": "18.0.1.0.0",
-    "category": "Sales",
-    "summary": "Forecast monthly sales using ARIMA",
-    "description": """
-        Forecast monthly sales one month ahead
-        using a trained ARIMA model and display
-        the result as a line chart.
-    """,
-    "author": "Thanchanok",
-    "depends": ["sale", "web"],
-    "data": [
-        "security/ir.model.access.csv",
-        "views/sale_monthly_forecast_view.xml",
-    ],
-    "assets": {
-        "web.assets_backend": [
-            "web/static/lib/Chart/Chart.js",
-            "sales_monthly_forecast/static/src/xml/sales_monthly_forecast_chart.xml",
-            "sales_monthly_forecast/static/src/js/sales_monthly_forecast_chart.js",
-        ],
-    },
-    "installable": True,
-    "application": False,
-}
+
+from odoo import models, fields, api
+from odoo.exceptions import UserError
+from collections import defaultdict
+from datetime import datetime
+from .predict import forecast_next_month
+
+class SaleMonthlyForecast(models.Model):
+    _name = "sale.monthly.forecast"
+    _description = "Monthly Sales Forecast (ARIMA)"
+    _rec_name = "name"
+
+    name = fields.Char(
+        string="Name",
+        default="Monthly Sales Forecast",
+        readonly=True
+    )
+
+    forecast_month = fields.Char(
+        string="Forecast Month",
+        readonly=True
+    )
+
+    forecast_sales = fields.Float(
+        string="Forecast Sales",
+        readonly=True
+    )
+
+    # core method
+    def action_compute_forecast(self):
+        """
+        1) Pull sale.order from Odoo
+        2) Aggregate sales by month
+        3) Call predict.py
+        4) Save forecast result
+        """
+
+        # 1) fetch confirmed sales orders
+        orders = self.env["sale.order"].search([
+            ("state", "in", ["sale", "done"]),
+            ("date_order", "!=", False)
+        ], order="date_order ASC")
+
+        if not orders:
+            raise UserError("No confirmed sales orders found.")
+
+        # 2) aggregate monthly sales
+        monthly_totals = defaultdict(float)
+
+        for order in orders:
+            order_date = fields.Datetime.to_datetime(order.date_order)
+            month_key = order_date.strftime("%Y-%m")
+            monthly_totals[month_key] += order.amount_total
+
+        monthly_sales = [
+            {"month": month, "sales": monthly_totals[month]}
+            for month in sorted(monthly_totals.keys())
+        ]
+
+        # 3) call forecast function
+        try:
+            result = forecast_next_month(monthly_sales)
+        except Exception as e:
+            raise UserError(str(e))
+
+        # 4) save result to record
+        self.write({
+            "forecast_month": result["forecast_month"],
+            "forecast_sales": result["forecast_sales"],
+        })
+
+        return True
+
+    # data for chart (used by js)
+    @api.model
+    def get_forecast_chart_data(self, record_id):
+        record = self.browse(record_id)
+        if not record.exists():
+            return {}
+
+        orders = self.env["sale.order"].search([
+            ("state", "in", ["sale", "done"]),
+            ("date_order", "!=", False)
+        ], order="date_order ASC")
+
+        monthly_totals = defaultdict(float)
+
+        for order in orders:
+            order_date = fields.Datetime.to_datetime(order.date_order)
+            month_key = order_date.strftime("%B %Y")
+            monthly_totals[month_key] += order.amount_total
+
+        labels = list(monthly_totals.keys())
+        actual = list(monthly_totals.values())
+
+        forecast = []
+        if record.forecast_month and record.forecast_sales:
+            labels.append(record.forecast_month)
+            actual.append(None)
+            forecast = [None] * (len(actual)-1) + [record.forecast_sales]
+
+        return {
+            "labels": labels,
+            "actual": actual,
+            "forecast": forecast,
+        }
