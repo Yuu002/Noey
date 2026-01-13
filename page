@@ -1,15 +1,167 @@
-Odoo Client Error
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\js\sales_monthly_forecast_chart.js
+/** @odoo-module **/
 
-UncaughtPromiseError > KeyNotFoundError
-Uncaught Promise > Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
+import { registry } from "@web/core/registry";
+import { Component, onMounted, useRef } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
 
-Occured on localhost:10018 on 2026-01-13 03:56:47 GMT
+export class SaleMonthlyForecastChart extends Component {
+    setup() {
+        this.orm = useService("orm");
+        this.chartRef = useRef("chart");
 
-KeyNotFoundError: Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
-    Error: Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
-        at Registry.get (http://localhost:10018/web/assets/6137eb3/web.assets_web.min.js:3695:76)
-        at _executeClientAction (http://localhost:10018/web/assets/6137eb3/web.assets_web.min.js:10093:87)
-        at doAction (http://localhost:10018/web/assets/6137eb3/web.assets_web.min.js:10110:192)
-        at async Object.doActionButton (http://localhost:10018/web/assets/6137eb3/web.assets_web.min.js:10121:249)
-        at async execute (http://localhost:10018/web/assets/6137eb3/web.assets_web.min.js:9720:301)
-        at async executeButtonCallback (http://localhost:10018/web/assets/6137eb3/web.assets_web.min.js:9713:34)
+        onMounted(() => {
+            this.renderChart();
+        });
+    }
+
+    async renderChart() {
+        const result = await this.orm.call(
+            "sale.monthly.forecast",
+            "get_forecast_chart_data",
+            [],
+            {}
+        );
+
+        if (!result) {
+            return;
+        }
+
+        const labels = [...result.labels, result.forecast_label];
+        const actualData = [...result.actual, null];
+        const forecastData = new Array(result.actual.length).fill(null);
+        forecastData.push(result.forecast_value);
+
+        const ctx = this.chartRef.el.getContext("2d");
+
+        new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Actual Sales",
+                        data: actualData,
+                        borderWidth: 2,
+                        tension: 0.3,
+                    },
+                    {
+                        label: "Forecast",
+                        data: forecastData,
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        tension: 0.3,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: "top",
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                    },
+                },
+            },
+        });
+    }
+}
+
+SaleMonthlyForecastChart.template = "sale_monthly_forecast_chart_template";
+registry.category("actions").add(
+    "sale_monthly_forecast_chart",
+    SaleMonthlyForecastChart
+);
+
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sale_monthly_forecast_view.xml
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- form action -->
+    <record id="action_sale_monthly_forecast" model="ir.actions.act_window">
+        <field name="name">Monthly Sales Forecast</field>
+        <field name="res_model">sale.monthly.forecast</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+    </record>
+
+    <!-- client action (chart) -->
+    <record id="action_sale_monthly_forecast_chart" model="ir.actions.client">
+        <field name="name">Monthly Sales Forecast Chart</field>
+        <field name="tag">sale_monthly_forecast_chart</field>
+    </record>
+
+    <!-- menu -->
+    <menuitem
+        id="menu_sale_monthly_forecast_root"
+        name="Sales Forecast"
+        parent="sale.sale_menu_root"
+        sequence="30"/>
+
+    <menuitem
+        id="menu_sale_monthly_forecast"
+        name="Monthly Forecast"
+        parent="menu_sale_monthly_forecast_root"
+        action="action_sale_monthly_forecast"
+        sequence="10"/>
+
+    <!-- forn view -->
+    <record id="view_sale_monthly_forecast_form" model="ir.ui.view">
+        <field name="name">sale.monthly.forecast.form</field>
+        <field name="model">sale.monthly.forecast</field>
+        <field name="arch" type="xml">
+
+            <form string="Monthly Sales Forecast">
+                <header>
+                    <!-- compute forecast -->
+                    <button
+                        name="action_compute_forecast"
+                        type="object"
+                        string="Compute Forecast"
+                        class="btn-primary"/>
+
+                    <!-- open chart -->
+                    <button
+                        name="%(action_sale_monthly_forecast_chart)d"
+                        type="action"
+                        string="View Chart"
+                        class="btn-secondary"/>
+                </header>
+
+                <sheet>
+                    <group>
+                        <field name="forecast_month" readonly="1"/>
+                        <field name="forecast_sales" readonly="1"/>
+                    </group>
+
+                    <group>
+                        <div class="o_form_label">
+                            Description:
+                        </div>
+                        <p>
+                            This forecast is generated using a trained ARIMA model
+                            based on historical monthly sales data.
+                        </p>
+                    </group>
+                </sheet>
+            </form>
+
+        </field>
+    </record>
+
+    <!-- owl template forchart (used by js) -->
+    <template id="sale_monthly_forecast_chart_template"
+              name="Monthly Sales Forecast Chart">
+
+        <div class="o_form_view">
+            <h2>Monthly Sales Forecast</h2>
+            <canvas t-ref="chart" style="width:100%; height:400px;"/>
+        </div>
+
+    </template>
+
+</odoo>
