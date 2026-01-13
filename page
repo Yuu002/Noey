@@ -14,6 +14,18 @@ KeyNotFoundError: Cannot find key "sale_monthly_forecast_chart" in the "actions"
         at async execute (http://localhost:10018/web/assets/debug/web.assets_web.js:95579:21) (/web/static/src/views/view_button/view_button_hook.js:101)
         at async executeButtonCallback (http://localhost:10018/web/assets/debug/web.assets_web.js:95507:15) (/web/static/src/views/view_button/view_button_hook.js:29)
 
+sales_monthly_forecast_chart.js loaded
+tour_interactive.js:104 click .o_app[data-menu-xmlid='sale.sale_menu_root']
+owl.js:5930 Owl is running in 'dev' mode.
+error_service.js:87 KeyNotFoundError: Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
+    Error: Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
+        at Registry.get (:10018/web/assets/debug/web.assets_web.js:35365:19) (/web/static/src/core/registry.js:124)
+        at _executeClientAction (:10018/web/assets/debug/web.assets_web.js:99313:45) (/web/static/src/webclient/actions/action_service.js:1235)
+        at doAction (:10018/web/assets/debug/web.assets_web.js:99489:24) (/web/static/src/webclient/actions/action_service.js:1411)
+        at async Object.doActionButton (:10018/web/assets/debug/web.assets_web.js:99644:9) (/web/static/src/webclient/actions/action_service.js:1566)
+        at async execute (:10018/web/assets/debug/web.assets_web.js:95579:21) (/web/static/src/views/view_button/view_button_hook.js:101)
+        at async executeButtonCallback (:10018/web/assets/debug/web.assets_web.js:95507:15) (/web/static/src/views/view_button/view_button_hook.js:29)
+
 C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\js\sales_monthly_forecast_chart.js
 /** @odoo-module **/
 
