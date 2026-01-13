@@ -165,3 +165,159 @@ C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sale_monthly_forec
     </template>
 
 </odoo>
+
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\__manifest__.py
+# -*- coding: utf-8 -*-
+{
+    "name": "Monthly Sales Forecast",
+    "version": "18.0.1.0.0",
+    "category": "Sales",
+    "summary": "Forecast monthly sales using ARIMA",
+    "description": """
+        Forecast monthly sales one month ahead
+        using a trained ARIMA model and display
+        the result as a line chart.
+    """,
+    "author": "Thanchanok",
+    "depends": ["sale", "web"],
+    "data": [
+        "security/ir.model.access.csv",
+        "views/sale_monthly_forecast_view.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "sales_monthly_forecast/static/src/js/sales_monthly_forecast_chart.js",
+        ],
+    },
+    "installable": True,
+    "application": False,
+}
+
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\models\sales_monthly_forecast.py
+# -*- coding: utf-8 -*-
+
+from odoo import models, fields, api
+from odoo.exceptions import UserError
+from collections import defaultdict
+from datetime import datetime
+from .predict import forecast_next_month
+
+class SaleMonthlyForecast(models.Model):
+    _name = "sale.monthly.forecast"
+    _description = "Monthly Sales Forecast (ARIMA)"
+    _rec_name = "name"
+
+    name = fields.Char(
+        string="Name",
+        default="Monthly Sales Forecast",
+        readonly=True
+    )
+
+    forecast_month = fields.Char(
+        string="Forecast Month",
+        readonly=True
+    )
+
+    forecast_sales = fields.Float(
+        string="Forecast Sales",
+        readonly=True
+    )
+
+    # core method
+    def action_compute_forecast(self):
+        """
+        1) Pull sale.order from Odoo
+        2) Aggregate sales by month
+        3) Call predict.py
+        4) Save forecast result
+        """
+
+        # 1) fetch confirmed sales orders
+        orders = self.env["sale.order"].search([
+            ("state", "in", ["sale", "done"]),
+            ("date_order", "!=", False)
+        ], order="date_order ASC")
+
+        if not orders:
+            raise UserError("No confirmed sales orders found.")
+
+        # 2) aggregate monthly sales
+        monthly_totals = defaultdict(float)
+
+        for order in orders:
+            order_date = fields.Datetime.to_datetime(order.date_order)
+            month_key = order_date.strftime("%Y-%m")
+            monthly_totals[month_key] += order.amount_total
+
+        monthly_sales = [
+            {"month": month, "sales": monthly_totals[month]}
+            for month in sorted(monthly_totals.keys())
+        ]
+
+        # 3) call forecast function
+        try:
+            result = forecast_next_month(monthly_sales)
+        except Exception as e:
+            raise UserError(str(e))
+
+        # 4) save result to record
+        self.write({
+            "forecast_month": result["forecast_month"],
+            "forecast_sales": result["forecast_sales"],
+        })
+
+        return True
+
+    # data for chart (used by js)
+    def get_forecast_chart_data(self):
+        """
+        Return historical monthly sales + forecast
+        Used by JS to draw line chart
+        """
+
+        orders = self.env["sale.order"].search([
+            ("state", "in", ["sale", "done"]),
+            ("date_order", "!=", False)
+        ], order="date_order ASC")
+
+        monthly_totals = defaultdict(float)
+
+        for order in orders:
+            order_date = fields.Datetime.to_datetime(order.date_order)
+            month_key = order_date.strftime("%Y-%m")
+            monthly_totals[month_key] += order.amount_total
+
+        data = [
+            {
+                "month": month,
+                "sales": monthly_totals[month],
+                "type": "actual"
+            }
+            for month in sorted(monthly_totals.keys())
+        ]
+
+        # add forecast point if exists
+        if self.forecast_month and self.forecast_sales:
+            data.append({
+                "month": self.forecast_month,
+                "sales": self.forecast_sales,
+                "type": "forecast"
+            })
+
+        return data
+Odoo Client Error
+
+UncaughtPromiseError > OwlError
+Uncaught Promise > Missing template: "sale_monthly_forecast_chart_template" (for component "SaleMonthlyForecastChart")
+
+Occured on localhost:10018 on 2026-01-13 04:27:07 GMT
+
+OwlError: Missing template: "sale_monthly_forecast_chart_template" (for component "SaleMonthlyForecastChart")
+    Error: Missing template: "sale_monthly_forecast_chart_template" (for component "SaleMonthlyForecastChart")
+        at App.getTemplate (http://localhost:10018/web/assets/d631e56/web.assets_web.min.js:1217:7)
+        at new ComponentNode (http://localhost:10018/web/assets/d631e56/web.assets_web.min.js:1060:133)
+        at http://localhost:10018/web/assets/d631e56/web.assets_web.min.js:1628:6
+        at ControllerComponent.template (eval at compile (http://localhost:10018/web/assets/d631e56/web.assets_web.min.js:1585:421), <anonymous>:9:27)
+        at Fiber._render (http://localhost:10018/web/assets/d631e56/web.assets_web.min.js:996:96)
+        at Fiber.render (http://localhost:10018/web/assets/d631e56/web.assets_web.min.js:995:6)
+        at ComponentNode.initiateRender (http://localhost:10018/web/assets/d631e56/web.assets_web.min.js:1065:47)
