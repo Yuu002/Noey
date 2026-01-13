@@ -1,24 +1,24 @@
-Odoo Client Error
-
-UncaughtPromiseError > KeyNotFoundError
-Uncaught Promise > Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
-
-Occured on localhost:10018 on 2026-01-13 06:30:47 GMT
-
-KeyNotFoundError: Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
-    Error: Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
-        at Registry.get (http://localhost:10018/web/assets/debug/web.assets_web.js:35365:19) (/web/static/src/core/registry.js:124)
-        at _executeClientAction (http://localhost:10018/web/assets/debug/web.assets_web.js:99313:45) (/web/static/src/webclient/actions/action_service.js:1235)
-        at doAction (http://localhost:10018/web/assets/debug/web.assets_web.js:99489:24) (/web/static/src/webclient/actions/action_service.js:1411)
-        at async Object.doActionButton (http://localhost:10018/web/assets/debug/web.assets_web.js:99644:9) (/web/static/src/webclient/actions/action_service.js:1566)
-        at async execute (http://localhost:10018/web/assets/debug/web.assets_web.js:95579:21) (/web/static/src/views/view_button/view_button_hook.js:101)
-        at async executeButtonCallback (http://localhost:10018/web/assets/debug/web.assets_web.js:95507:15) (/web/static/src/views/view_button/view_button_hook.js:29)
-
-
-'Could not get content for web/static/lib/Chart/Chart.jssales_monthly_forecast/static/src/js/sales_monthly_forecast_chart.js.' in file 'web/static/lib/Chart/Chart.jssales_monthly_forecast/static/src/js/sales_monthly_forecast_chart.js'
-(anonymous) @ sales_monthly_forecast_chart.js:1Understand this error
+sales_monthly_forecast_chart.js loaded
+module_loader.js:229 Uncaught Error: Error while loading "web.assets_web.bundle.xml":
+Error: 'Could not get content for web/static/lib/Chart/Chart.jssales_monthly_forecast/static/src/xml/sales_monthly_forecast_chart.xml.' in file 'web/static/lib/Chart/Chart.jssales_monthly_forecast/static/src/xml/sales_monthly_forecast_chart.xml'
+    at ModuleLoader.startModule (module_loader.js:229:1)
+    at ModuleLoader.startModules (module_loader.js:213:1)
+    at ModuleLoader.addJob (module_loader.js:43:1)
+    at ModuleLoader.define (module_loader.js:68:1)
+    at start.js:54:1Understand this error
+module_loader.js:160 The following modules failed to load because of an error: Array(1)
+reportErrors @ module_loader.js:160Understand this error
 tour_interactive.js:104 click .o_app[data-menu-xmlid='sale.sale_menu_root']
-
+owl.js:5930 Owl is running in 'dev' mode.
+error_service.js:87 OwlError: Missing template: "web.WebClient" (for component "WebClient")
+    Error: Missing template: "web.WebClient" (for component "WebClient")
+        at App.getTemplate (:10018/web/assets/debug/web.assets_web.js:11345:27) (/web/static/lib/owl/owl.js:3352)
+        at new ComponentNode (:10018/web/assets/debug/web.assets_web.js:10425:33) (/web/static/lib/owl/owl.js:2432)
+        at App.makeNode (:10018/web/assets/debug/web.assets_web.js:13972:20) (/web/static/lib/owl/owl.js:5979)
+        at App.createRoot (:10018/web/assets/debug/web.assets_web.js:13948:31) (/web/static/lib/owl/owl.js:5955)
+        at App.mount (:10018/web/assets/debug/web.assets_web.js:13932:31) (/web/static/lib/owl/owl.js:5939)
+        at mountComponent (:10018/web/assets/debug/web.assets_web.js:14540:28) (/web/static/src/env.js:194)
+        at async startWebClient (:10018/web/assets/debug/web.assets_web.js:223460:17) (/web/static/src/start.js:34)
 
 C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\js\sales_monthly_forecast_chart.js
 /** @odoo-module **/
