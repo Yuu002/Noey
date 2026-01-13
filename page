@@ -1,82 +1,7 @@
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sales_monthly_forecast_view.xml
-<?xml version="1.0" encoding="utf-8"?>
-<odoo>
-
-    <!-- form action -->
-    <record id="action_sales_monthly_forecast" model="ir.actions.act_window">
-        <field name="name">Monthly Sales Forecast</field>
-        <field name="res_model">sale.monthly.forecast</field>
-        <field name="view_mode">form</field>
-        <field name="target">current</field>
-    </record>
-
-    <!-- menu -->
-    <menuitem
-        id="menu_sale_monthly_forecast_root"
-        name="Sales Forecast"
-        parent="sale.sale_menu_root"
-        sequence="30"/>
-
-    <menuitem
-        id="menu_sale_monthly_forecast"
-        name="Monthly Forecast"
-        parent="menu_sale_monthly_forecast_root"
-        action="action_sale_monthly_forecast"
-        sequence="10"/>
-
-    <!-- forn view -->
-    <record id="view_sale_monthly_forecast_form" model="ir.ui.view">
-        <field name="name">sale.monthly.forecast.form</field>
-        <field name="model">sale.monthly.forecast</field>
-        <field name="arch" type="xml">
-
-            <form string="Monthly Sales Forecast">
-                <header>
-                    <!-- compute forecast -->
-                    <button
-                        name="action_compute_forecast"
-                        type="object"
-                        string="Compute Forecast"
-                        class="btn-primary"/>
-                </header>
-
-                <sheet>
-                    <group>
-                        <field name="forecast_month" readonly="1"/>
-                        <field name="forecast_sales" readonly="1"/>
-                    </group>
-
-                    <group>
-                        <div class="o_form_label">
-                            Description:
-                        </div>
-                        <p>
-                            This forecast is generated using a trained ARIMA model
-                            based on historical monthly sales data.
-                        </p>
-                    </group>
-
-                    <separator string="Sales Trend & Forecast"/>
-
-                    <div
-                        class="o_sale_monthly_forecast_chart"
-                        t-att-data-record-id="active_id"
-                        style="width:100%; height:420px;"/>
-                        
-                </sheet>
-            </form>
-
-        </field>
-    </record>
-
-</odoo>
-
-
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\js\sales_monthly_forecast_chart.js
 /** @odoo-module **/
 
-import { registry } from "@web/core/registry";
 import { Component, onMounted, useRef } from "@odoo/owl";
+import { mount } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 
 class SaleMonthlyForecastChart extends Component {
@@ -95,7 +20,8 @@ class SaleMonthlyForecastChart extends Component {
 
         const result = await this.orm.call(
             "sale.monthly.forecast",
-            "get_forecast_chart_data", [recordId], {}
+            "get_forecast_chart_data",
+            [recordId]
         );
 
         if (!result || !this.chartRef.el) return;
@@ -106,7 +32,8 @@ class SaleMonthlyForecastChart extends Component {
             type: "line",
             data: {
                 labels: result.labels,
-                datasets: [{
+                datasets: [
+                    {
                         label: "Actual Sales",
                         data: result.actual,
                         borderWidth: 2,
@@ -121,31 +48,26 @@ class SaleMonthlyForecastChart extends Component {
                     },
                 ],
             },
-
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true },
+                },
+            },
         });
     }
 }
 
 SaleMonthlyForecastChart.template = "sale_monthly_forecast_chart_template";
 
+/* mount component ลงใน form */
 document.addEventListener("DOMContentLoaded", () => {
-    const el = document.querySelector(".o_sales_monthly_forecast_chart");
+    const el = document.querySelector(".o_sale_monthly_forecast_chart");
     if (!el) return;
 
-    MouseEvent(SaleMonthlyForecastChart, el, {
+    mount(SaleMonthlyForecastChart, el, {
         props: {
-            recordId: parseInt(el.datasets.recordId),
+            recordId: parseInt(el.dataset.recordId),
         },
     });
 });
-
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\xml\sales_monthly_forecast_chart.xml
-<?xml version="1.0" encoding="utf-8"?>
-<templates xml:space="preserve">
-    <t t-name="sale_monthly_forecast_chart_template">
-        <div class="o_form_view">
-            <h2>Monthly Sales Forecast</h2>
-            <canvas t-ref="chart" style="width:100%; height:400px;"/>
-        </div>
-    </t>
-</templates>
