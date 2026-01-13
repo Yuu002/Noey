@@ -1,8 +1,83 @@
-Uncaught Error: Error while loading "@sales_monthly_forecast/js/sales_monthly_forecast_chart":
-ReferenceError: registry is not defined
-    at ModuleLoader.startModule (module_loader.js:229:1)
-    at ModuleLoader.startModules (module_loader.js:213:1)
-    at ModuleLoader.addJob (module_loader.js:43:1)
-    at ModuleLoader.define (module_loader.js:68:1)
-    at sales_monthly_forecast_chart.js:1:1Understand this error
-module_loader.js:160 The following modules failed to load because of an error: Array(1)
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sales_monthly_forecast_view.xml
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- form action -->
+    <record id="action_sales_monthly_forecast" model="ir.actions.act_window">
+        <field name="name">Monthly Sales Forecast</field>
+        <field name="res_model">sale.monthly.forecast</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+    </record>
+
+    <!-- menu -->
+    <menuitem
+        id="menu_sale_monthly_forecast_root"
+        name="Sales Forecast"
+        parent="sale.sale_menu_root"
+        sequence="30"/>
+
+    <menuitem
+        id="menu_sale_monthly_forecast"
+        name="Monthly Forecast"
+        parent="menu_sale_monthly_forecast_root"
+        action="action_sales_monthly_forecast"
+        sequence="10"/>
+
+    <!-- forn view -->
+    <record id="view_sale_monthly_forecast_form" model="ir.ui.view">
+        <field name="name">sale.monthly.forecast.form</field>
+        <field name="model">sale.monthly.forecast</field>
+        <field name="arch" type="xml">
+
+            <form string="Monthly Sales Forecast">
+                <header>
+                    <!-- compute forecast -->
+                    <button
+                        name="action_compute_forecast"
+                        type="object"
+                        string="Compute Forecast"
+                        class="btn-primary"/>
+                </header>
+
+                <sheet>
+                    <group>
+                        <field name="forecast_month" readonly="1"/>
+                        <field name="forecast_sales" readonly="1"/>
+                    </group>
+
+                    <group>
+                        <div class="o_form_label">
+                            Description:
+                        </div>
+                        <p>
+                            This forecast is generated using a trained ARIMA model
+                            based on historical monthly sales data.
+                        </p>
+                    </group>
+
+                    <separator string="Sales Trend &amp; Forecast"/>
+
+                    <div
+                        class="o_sale_monthly_forecast_chart"
+                        t-att-data-record-id="record.id"
+                        style="width:100%; height:420px; margin-top:16px"/>
+
+                </sheet>
+            </form>
+
+        </field>
+    </record>
+
+</odoo>
+
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\xml\sales_monthly_forecast_chart.xml
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+    <t t-name="sale_monthly_forecast_chart_template">
+        <div class="o_form_view">
+            <h2>Monthly Sales Forecast</h2>
+            <canvas t-ref="chart" style="width:100%; height:400px;"></canvas>
+        </div>
+    </t>
+</templates>
