@@ -81,3 +81,75 @@ C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\xml\sales_mon
         </div>
     </t>
 </templates>
+
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\js\sales_monthly_forecast_chart.js
+/** @odoo-module **/
+
+import { Component, onMounted, useRef } from "@odoo/owl";
+import { mount } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
+
+class SaleMonthlyForecastChart extends Component {
+    setup() {
+        this.orm = useService("orm");
+        this.chartRef = useRef("chart");
+
+        onMounted(() => {
+            this.renderChart();
+        });
+    }
+
+    async renderChart() {
+        const recordId = this.props.recordId;
+        if (!recordId) return;
+
+        const result = await this.orm.call(
+            "sale.monthly.forecast",
+            "get_forecast_chart_data", [recordId]
+        );
+
+        if (!result || !this.chartRef.el) return;
+
+        const ctx = this.chartRef.el.getContext("2d");
+
+        new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: result.labels,
+                datasets: [{
+                        label: "Actual Sales",
+                        data: result.actual,
+                        borderWidth: 2,
+                        tension: 0.3,
+                    },
+                    {
+                        label: "Forecast",
+                        data: result.forecast,
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        tension: 0.3,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true },
+                },
+            },
+        });
+    }
+}
+
+SaleMonthlyForecastChart.template = "sale_monthly_forecast_chart_template";
+
+document.addEventListener("DOMContentLoaded", () => {
+    const el = document.querySelector(".o_sale_monthly_forecast_chart");
+    if (!el) return;
+
+    mount(SaleMonthlyForecastChart, el, {
+        props: {
+            recordId: Number(el.dataset.recordId),
+        },
+    });
+});
