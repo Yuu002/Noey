@@ -1,323 +1,39 @@
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\js\sales_monthly_forecast_chart.js
-/** @odoo-module **/
+Odoo Server Error
+RPC_ERROR
 
-import { registry } from "@web/core/registry";
-import { Component, onMounted, useRef } from "@odoo/owl";
-import { useService } from "@web/core/utils/hooks";
+Odoo Server Error
 
-export class SaleMonthlyForecastChart extends Component {
-    setup() {
-        this.orm = useService("orm");
-        this.chartRef = useRef("chart");
+Occured on localhost:10018 on model sale.monthly.forecast on 2026-01-13 04:42:55 GMT
 
-        onMounted(() => {
-            this.renderChart();
-        });
-    }
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2166, in _transactioning
+    return service_model.retrying(func, env=self.env)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/service/model.py", line 156, in retrying
+    result = func()
+             ^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2133, in _serve_ir_http
+    response = self.dispatcher.dispatch(rule.endpoint, args)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2381, in dispatch
+    result = self.request.registry['ir.http']._dispatch(endpoint)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_http.py", line 333, in _dispatch
+    result = endpoint(**request.params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/http.py", line 754, in route_wrapper
+    result = endpoint(self, *args, **params_ok)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/addons/web/controllers/dataset.py", line 36, in call_kw
+    return call_kw(request.env[model], method, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/api.py", line 525, in call_kw
+    ids, args = args[0], args[1:]
+                ~~~~^^^
+IndexError: list index out of range
 
-    async renderChart() {
-        const result = await this.orm.call(
-            "sale.monthly.forecast",
-            "get_forecast_chart_data",
-            [],
-            {}
-        );
-
-        if (!result) {
-            return;
-        }
-
-        const labels = [...result.labels, result.forecast_label];
-        const actualData = [...result.actual, null];
-        const forecastData = new Array(result.actual.length).fill(null);
-        forecastData.push(result.forecast_value);
-
-        const ctx = this.chartRef.el.getContext("2d");
-
-        new Chart(ctx, {
-            type: "line",
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: "Actual Sales",
-                        data: actualData,
-                        borderWidth: 2,
-                        tension: 0.3,
-                    },
-                    {
-                        label: "Forecast",
-                        data: forecastData,
-                        borderDash: [5, 5],
-                        borderWidth: 2,
-                        tension: 0.3,
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: "top",
-                    },
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                    },
-                },
-            },
-        });
-    }
-}
-
-SaleMonthlyForecastChart.template = "sale_monthly_forecast_chart_template";
-registry.category("actions").add(
-    "sale_monthly_forecast_chart",
-    SaleMonthlyForecastChart
-);
-
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sale_monthly_forecast_view.xml
-<?xml version="1.0" encoding="utf-8"?>
-<odoo>
-
-    <!-- form action -->
-    <record id="action_sale_monthly_forecast" model="ir.actions.act_window">
-        <field name="name">Monthly Sales Forecast</field>
-        <field name="res_model">sale.monthly.forecast</field>
-        <field name="view_mode">form</field>
-        <field name="target">current</field>
-    </record>
-
-    <!-- client action (chart) -->
-    <record id="action_sale_monthly_forecast_chart" model="ir.actions.client">
-        <field name="name">Monthly Sales Forecast Chart</field>
-        <field name="tag">sale_monthly_forecast_chart</field>
-    </record>
-
-    <!-- menu -->
-    <menuitem
-        id="menu_sale_monthly_forecast_root"
-        name="Sales Forecast"
-        parent="sale.sale_menu_root"
-        sequence="30"/>
-
-    <menuitem
-        id="menu_sale_monthly_forecast"
-        name="Monthly Forecast"
-        parent="menu_sale_monthly_forecast_root"
-        action="action_sale_monthly_forecast"
-        sequence="10"/>
-
-    <!-- forn view -->
-    <record id="view_sale_monthly_forecast_form" model="ir.ui.view">
-        <field name="name">sale.monthly.forecast.form</field>
-        <field name="model">sale.monthly.forecast</field>
-        <field name="arch" type="xml">
-
-            <form string="Monthly Sales Forecast">
-                <header>
-                    <!-- compute forecast -->
-                    <button
-                        name="action_compute_forecast"
-                        type="object"
-                        string="Compute Forecast"
-                        class="btn-primary"/>
-
-                    <!-- open chart -->
-                    <button
-                        name="%(action_sale_monthly_forecast_chart)d"
-                        type="action"
-                        string="View Chart"
-                        class="btn-secondary"/>
-                </header>
-
-                <sheet>
-                    <group>
-                        <field name="forecast_month" readonly="1"/>
-                        <field name="forecast_sales" readonly="1"/>
-                    </group>
-
-                    <group>
-                        <div class="o_form_label">
-                            Description:
-                        </div>
-                        <p>
-                            This forecast is generated using a trained ARIMA model
-                            based on historical monthly sales data.
-                        </p>
-                    </group>
-                </sheet>
-            </form>
-
-        </field>
-    </record>
-
-    <!-- owl template forchart (used by js) -->
-    <template id="sale_monthly_forecast_chart_template"
-              name="Monthly Sales Forecast Chart">
-
-        <div class="o_form_view">
-            <h2>Monthly Sales Forecast</h2>
-            <canvas t-ref="chart" style="width:100%; height:400px;"/>
-        </div>
-
-    </template>
-
-</odoo>
-
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\__manifest__.py
-# -*- coding: utf-8 -*-
-{
-    "name": "Monthly Sales Forecast",
-    "version": "18.0.1.0.0",
-    "category": "Sales",
-    "summary": "Forecast monthly sales using ARIMA",
-    "description": """
-        Forecast monthly sales one month ahead
-        using a trained ARIMA model and display
-        the result as a line chart.
-    """,
-    "author": "Thanchanok",
-    "depends": ["sale", "web"],
-    "data": [
-        "security/ir.model.access.csv",
-        "views/sale_monthly_forecast_view.xml",
-    ],
-    "assets": {
-        "web.assets_backend": [
-            "sales_monthly_forecast/static/src/js/sales_monthly_forecast_chart.js",
-        ],
-    },
-    "installable": True,
-    "application": False,
-}
-
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\models\sales_monthly_forecast.py
-# -*- coding: utf-8 -*-
-
-from odoo import models, fields, api
-from odoo.exceptions import UserError
-from collections import defaultdict
-from datetime import datetime
-from .predict import forecast_next_month
-
-class SaleMonthlyForecast(models.Model):
-    _name = "sale.monthly.forecast"
-    _description = "Monthly Sales Forecast (ARIMA)"
-    _rec_name = "name"
-
-    name = fields.Char(
-        string="Name",
-        default="Monthly Sales Forecast",
-        readonly=True
-    )
-
-    forecast_month = fields.Char(
-        string="Forecast Month",
-        readonly=True
-    )
-
-    forecast_sales = fields.Float(
-        string="Forecast Sales",
-        readonly=True
-    )
-
-    # core method
-    def action_compute_forecast(self):
-        """
-        1) Pull sale.order from Odoo
-        2) Aggregate sales by month
-        3) Call predict.py
-        4) Save forecast result
-        """
-
-        # 1) fetch confirmed sales orders
-        orders = self.env["sale.order"].search([
-            ("state", "in", ["sale", "done"]),
-            ("date_order", "!=", False)
-        ], order="date_order ASC")
-
-        if not orders:
-            raise UserError("No confirmed sales orders found.")
-
-        # 2) aggregate monthly sales
-        monthly_totals = defaultdict(float)
-
-        for order in orders:
-            order_date = fields.Datetime.to_datetime(order.date_order)
-            month_key = order_date.strftime("%Y-%m")
-            monthly_totals[month_key] += order.amount_total
-
-        monthly_sales = [
-            {"month": month, "sales": monthly_totals[month]}
-            for month in sorted(monthly_totals.keys())
-        ]
-
-        # 3) call forecast function
-        try:
-            result = forecast_next_month(monthly_sales)
-        except Exception as e:
-            raise UserError(str(e))
-
-        # 4) save result to record
-        self.write({
-            "forecast_month": result["forecast_month"],
-            "forecast_sales": result["forecast_sales"],
-        })
-
-        return True
-
-    # data for chart (used by js)
-    def get_forecast_chart_data(self):
-        """
-        Return historical monthly sales + forecast
-        Used by JS to draw line chart
-        """
-
-        orders = self.env["sale.order"].search([
-            ("state", "in", ["sale", "done"]),
-            ("date_order", "!=", False)
-        ], order="date_order ASC")
-
-        monthly_totals = defaultdict(float)
-
-        for order in orders:
-            order_date = fields.Datetime.to_datetime(order.date_order)
-            month_key = order_date.strftime("%Y-%m")
-            monthly_totals[month_key] += order.amount_total
-
-        data = [
-            {
-                "month": month,
-                "sales": monthly_totals[month],
-                "type": "actual"
-            }
-            for month in sorted(monthly_totals.keys())
-        ]
-
-        # add forecast point if exists
-        if self.forecast_month and self.forecast_sales:
-            data.append({
-                "month": self.forecast_month,
-                "sales": self.forecast_sales,
-                "type": "forecast"
-            })
-
-        return data
-Odoo Client Error
-
-UncaughtPromiseError > OwlError
-Uncaught Promise > Missing template: "sale_monthly_forecast_chart_template" (for component "SaleMonthlyForecastChart")
-
-Occured on localhost:10018 on 2026-01-13 04:27:07 GMT
-
-OwlError: Missing template: "sale_monthly_forecast_chart_template" (for component "SaleMonthlyForecastChart")
-    Error: Missing template: "sale_monthly_forecast_chart_template" (for component "SaleMonthlyForecastChart")
-        at App.getTemplate (http://localhost:10018/web/assets/d631e56/web.assets_web.min.js:1217:7)
-        at new ComponentNode (http://localhost:10018/web/assets/d631e56/web.assets_web.min.js:1060:133)
-        at http://localhost:10018/web/assets/d631e56/web.assets_web.min.js:1628:6
-        at ControllerComponent.template (eval at compile (http://localhost:10018/web/assets/d631e56/web.assets_web.min.js:1585:421), <anonymous>:9:27)
-        at Fiber._render (http://localhost:10018/web/assets/d631e56/web.assets_web.min.js:996:96)
-        at Fiber.render (http://localhost:10018/web/assets/d631e56/web.assets_web.min.js:995:6)
-        at ComponentNode.initiateRender (http://localhost:10018/web/assets/d631e56/web.assets_web.min.js:1065:47)
+The above server error caused the following client error:
+RPC_ERROR: Odoo Server Error
+    RPC_ERROR
+        at makeErrorFromResponse (http://localhost:10018/web/assets/9da13aa/web.assets_web.min.js:3166:163)
+        at XMLHttpRequest.<anonymous> (http://localhost:10018/web/assets/9da13aa/web.assets_web.min.js:3171:13)
