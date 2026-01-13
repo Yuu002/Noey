@@ -1,9 +1,73 @@
-Odoo Client Error
+/** @odoo-module **/
 
-UncaughtPromiseError > ReferenceError
-Uncaught Promise > ctx is not defined
+import { registry } from "@web/core/registry";
+import { Component, onMounted, useRef } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
 
-Occured on localhost:10018 on 2026-01-13 07:53:23 GMT
+export class SaleMonthlyForecastChart extends Component {
+    setup() {
+        this.orm = useService("orm");
+        this.chartRef = useRef("chart");
 
-ReferenceError: ctx is not defined
-    at SaleMonthlyForecastChart.renderChart (http://localhost:10018/web/assets/debug/web.assets_web.js:237730:19) (/sales_monthly_forecast/static/src/js/sales_monthly_forecast_chart.js:31)
+        onMounted(() => {
+            this.renderChart();
+        });
+    }
+
+    async renderChart() {
+        const result = await this.orm.call(
+            "sale.monthly.forecast",
+            "get_forecast_chart_data", [], {}
+        );
+
+        if (!result) {
+            return;
+        }
+
+        const labels = result.labels;
+        const actualData = result.actual;
+        const forecastData = result.forecast;
+
+        const ctx = this.chartRef.el.getContext("2d");
+
+        new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [{
+                        label: "Actual Sales",
+                        data: actualData,
+                        borderWidth: 2,
+                        tension: 0.3,
+                    },
+                    {
+                        label: "Forecast",
+                        data: forecastData,
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        tension: 0.3,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: "top",
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                    },
+                },
+            },
+        });
+    }
+}
+
+SaleMonthlyForecastChart.template = "sale_monthly_forecast_chart_template";
+registry.category("actions").add(
+    "sale_monthly_forecast_chart",
+    SaleMonthlyForecastChart
+);
