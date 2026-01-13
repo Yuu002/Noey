@@ -1,9 +1,10 @@
+
 Odoo Client Error
 
 UncaughtPromiseError > KeyNotFoundError
 Uncaught Promise > Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
 
-Occured on localhost:10018 on 2026-01-13 06:06:13 GMT
+Occured on localhost:10018 on 2026-01-13 06:21:57 GMT
 
 KeyNotFoundError: Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
     Error: Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
