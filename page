@@ -1,16 +1,330 @@
-
 Odoo Client Error
 
 UncaughtPromiseError > KeyNotFoundError
 Uncaught Promise > Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
 
-Occured on localhost:10018 on 2026-01-13 06:21:57 GMT
+Occured on localhost:10018 on 2026-01-13 06:30:47 GMT
 
 KeyNotFoundError: Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
     Error: Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
-        at Registry.get (http://localhost:10018/web/assets/5acfc74/web.assets_web.min.js:3695:76)
-        at _executeClientAction (http://localhost:10018/web/assets/5acfc74/web.assets_web.min.js:10093:87)
-        at doAction (http://localhost:10018/web/assets/5acfc74/web.assets_web.min.js:10110:192)
-        at async Object.doActionButton (http://localhost:10018/web/assets/5acfc74/web.assets_web.min.js:10121:249)
-        at async execute (http://localhost:10018/web/assets/5acfc74/web.assets_web.min.js:9720:301)
-        at async executeButtonCallback (http://localhost:10018/web/assets/5acfc74/web.assets_web.min.js:9713:34)
+        at Registry.get (http://localhost:10018/web/assets/debug/web.assets_web.js:35365:19) (/web/static/src/core/registry.js:124)
+        at _executeClientAction (http://localhost:10018/web/assets/debug/web.assets_web.js:99313:45) (/web/static/src/webclient/actions/action_service.js:1235)
+        at doAction (http://localhost:10018/web/assets/debug/web.assets_web.js:99489:24) (/web/static/src/webclient/actions/action_service.js:1411)
+        at async Object.doActionButton (http://localhost:10018/web/assets/debug/web.assets_web.js:99644:9) (/web/static/src/webclient/actions/action_service.js:1566)
+        at async execute (http://localhost:10018/web/assets/debug/web.assets_web.js:95579:21) (/web/static/src/views/view_button/view_button_hook.js:101)
+        at async executeButtonCallback (http://localhost:10018/web/assets/debug/web.assets_web.js:95507:15) (/web/static/src/views/view_button/view_button_hook.js:29)
+
+
+'Could not get content for web/static/lib/Chart/Chart.jssales_monthly_forecast/static/src/js/sales_monthly_forecast_chart.js.' in file 'web/static/lib/Chart/Chart.jssales_monthly_forecast/static/src/js/sales_monthly_forecast_chart.js'
+(anonymous) @ sales_monthly_forecast_chart.js:1Understand this error
+tour_interactive.js:104 click .o_app[data-menu-xmlid='sale.sale_menu_root']
+
+
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\js\sales_monthly_forecast_chart.js
+/** @odoo-module **/
+
+console.log("sales_monthly_forecast_chart.js loaded");
+
+import { registry } from "@web/core/registry";
+import { Component, onMounted, useRef } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
+
+export class SaleMonthlyForecastChart extends Component {
+    setup() {
+        this.orm = useService("orm");
+        this.chartRef = useRef("chart");
+
+        onMounted(() => {
+            this.renderChart();
+        });
+    }
+
+    async renderChart() {
+        const result = await this.orm.call(
+            "sale.monthly.forecast",
+            "get_forecast_chart_data", [], {}
+        );
+
+        if (!result) {
+            return;
+        }
+
+        const labels = [...result.labels, result.forecast_label];
+        const actualData = [...result.actual, null];
+        const forecastData = new Array(result.actual.length).fill(null);
+        forecastData.push(result.forecast_value);
+
+        const ctx = this.chartRef.el.getContext("2d");
+
+        new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [{
+                        label: "Actual Sales",
+                        data: actualData,
+                        borderWidth: 2,
+                        tension: 0.3,
+                    },
+                    {
+                        label: "Forecast",
+                        data: forecastData,
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        tension: 0.3,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: "top",
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                    },
+                },
+            },
+        });
+    }
+}
+
+SaleMonthlyForecastChart.template = "sale_monthly_forecast_chart_template";
+registry.category("actions").add(
+    "sales_monthly_forecast_chart",
+    SaleMonthlyForecastChart
+);
+
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\models\sales_monthly_forecast.py
+# -*- coding: utf-8 -*-
+
+from odoo import models, fields, api
+from odoo.exceptions import UserError
+from collections import defaultdict
+from datetime import datetime
+from .predict import forecast_next_month
+
+class SaleMonthlyForecast(models.Model):
+    _name = "sale.monthly.forecast"
+    _description = "Monthly Sales Forecast (ARIMA)"
+    _rec_name = "name"
+
+    name = fields.Char(
+        string="Name",
+        default="Monthly Sales Forecast",
+        readonly=True
+    )
+
+    forecast_month = fields.Char(
+        string="Forecast Month",
+        readonly=True
+    )
+
+    forecast_sales = fields.Float(
+        string="Forecast Sales",
+        readonly=True
+    )
+
+    # core method
+    def action_compute_forecast(self):
+        """
+        1) Pull sale.order from Odoo
+        2) Aggregate sales by month
+        3) Call predict.py
+        4) Save forecast result
+        """
+
+        # 1) fetch confirmed sales orders
+        orders = self.env["sale.order"].search([
+            ("state", "in", ["sale", "done"]),
+            ("date_order", "!=", False)
+        ], order="date_order ASC")
+
+        if not orders:
+            raise UserError("No confirmed sales orders found.")
+
+        # 2) aggregate monthly sales
+        monthly_totals = defaultdict(float)
+
+        for order in orders:
+            order_date = fields.Datetime.to_datetime(order.date_order)
+            month_key = order_date.strftime("%Y-%m")
+            monthly_totals[month_key] += order.amount_total
+
+        monthly_sales = [
+            {"month": month, "sales": monthly_totals[month]}
+            for month in sorted(monthly_totals.keys())
+        ]
+
+        # 3) call forecast function
+        try:
+            result = forecast_next_month(monthly_sales)
+        except Exception as e:
+            raise UserError(str(e))
+
+        # 4) save result to record
+        self.write({
+            "forecast_month": result["forecast_month"],
+            "forecast_sales": result["forecast_sales"],
+        })
+
+        return True
+
+    # data for chart (used by js)
+    @api.model
+    def get_forecast_chart_data(self):
+        """
+        Return historical monthly sales + forecast
+        Used by JS to draw line chart
+        """
+
+        orders = self.env["sale.order"].search([
+            ("state", "in", ["sale", "done"]),
+            ("date_order", "!=", False)
+        ], order="date_order ASC")
+
+        monthly_totals = defaultdict(float)
+
+        for order in orders:
+            order_date = fields.Datetime.to_datetime(order.date_order)
+            month_key = order_date.strftime("%b %Y")
+            monthly_totals[month_key] += order.amount_total
+
+        labels = list(monthly_totals.keys())
+        actual = list(monthly_totals.values())
+
+        forecast_label = None
+        forecast_value = None
+
+        record = self.search([], limit=1)
+        if record.forecast_month and record.forecast_sales:
+            forecast_label = record.forecast_month
+            forecast_value = record.forecast_sales
+
+        return {
+            "labels": labels,
+            "actual": actual,
+            "forecast_label": forecast_label,
+            "forecast_value": forecast_value,
+        }
+
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\xml\sales_monthly_forecast_chart.xml
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+    <t t-name="sale_monthly_forecast_chart_template">
+        <div class="o_form_view">
+            <h2>Monthly Sales Forecast</h2>
+            <canvas t-ref="chart" style="witdth:100%; height:400px;"/>
+        </div>
+    </t>
+</templates>
+
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sales_monthly_forecast_view.xml
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- form action -->
+    <record id="action_sales_monthly_forecast" model="ir.actions.act_window">
+        <field name="name">Monthly Sales Forecast</field>
+        <field name="res_model">sale.monthly.forecast</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+    </record>
+
+    <!-- client action (chart) -->
+    <record id="action_sales_monthly_forecast_chart" model="ir.actions.client">
+        <field name="name">Monthly Sales Forecast Chart</field>
+        <field name="tag">sale_monthly_forecast_chart</field>
+    </record>
+
+    <!-- menu -->
+    <menuitem
+        id="menu_sale_monthly_forecast_root"
+        name="Sales Forecast"
+        parent="sale.sale_menu_root"
+        sequence="30"/>
+
+    <menuitem
+        id="menu_sale_monthly_forecast"
+        name="Monthly Forecast"
+        parent="menu_sale_monthly_forecast_root"
+        action="action_sale_monthly_forecast"
+        sequence="10"/>
+
+    <!-- forn view -->
+    <record id="view_sale_monthly_forecast_form" model="ir.ui.view">
+        <field name="name">sale.monthly.forecast.form</field>
+        <field name="model">sale.monthly.forecast</field>
+        <field name="arch" type="xml">
+
+            <form string="Monthly Sales Forecast">
+                <header>
+                    <!-- compute forecast -->
+                    <button
+                        name="action_compute_forecast"
+                        type="object"
+                        string="Compute Forecast"
+                        class="btn-primary"/>
+
+                    <!-- open chart -->
+                    <button
+                        name="%(action_sales_monthly_forecast_chart)d"
+                        type="action"
+                        string="View Chart"
+                        class="btn-secondary"/>
+                </header>
+
+                <sheet>
+                    <group>
+                        <field name="forecast_month" readonly="1"/>
+                        <field name="forecast_sales" readonly="1"/>
+                    </group>
+
+                    <group>
+                        <div class="o_form_label">
+                            Description:
+                        </div>
+                        <p>
+                            This forecast is generated using a trained ARIMA model
+                            based on historical monthly sales data.
+                        </p>
+                    </group>
+                </sheet>
+            </form>
+
+        </field>
+    </record>
+
+</odoo>
+
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\__manifest__.py
+# -*- coding: utf-8 -*-
+{
+    "name": "Monthly Sales Forecast",
+    "version": "18.0.1.0.0",
+    "category": "Sales",
+    "summary": "Forecast monthly sales using ARIMA",
+    "description": """
+        Forecast monthly sales one month ahead
+        using a trained ARIMA model and display
+        the result as a line chart.
+    """,
+    "author": "Thanchanok",
+    "depends": ["sale", "web"],
+    "data": [
+        "security/ir.model.access.csv",
+        "views/sale_monthly_forecast_view.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "web/static/lib/Chart/Chart.js"
+            "sales_monthly_forecast/static/src/js/sales_monthly_forecast_chart.js",
+            "sales_monthly_forecast/static/src/xml/sales_monthly_forecast_chart.xml",
+        ],
+    },
+    "installable": True,
+    "application": False,
+}
