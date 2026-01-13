@@ -1,39 +1,9 @@
-Odoo Server Error
-RPC_ERROR
+Odoo Client Error
 
-Odoo Server Error
+UncaughtPromiseError > TypeError
+Uncaught Promise > result.labels is not iterable
 
-Occured on localhost:10018 on model sale.monthly.forecast on 2026-01-13 04:42:55 GMT
+Occured on localhost:10018 on 2026-01-13 04:47:56 GMT
 
-Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2166, in _transactioning
-    return service_model.retrying(func, env=self.env)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/service/model.py", line 156, in retrying
-    result = func()
-             ^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2133, in _serve_ir_http
-    response = self.dispatcher.dispatch(rule.endpoint, args)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2381, in dispatch
-    result = self.request.registry['ir.http']._dispatch(endpoint)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_http.py", line 333, in _dispatch
-    result = endpoint(**request.params)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/http.py", line 754, in route_wrapper
-    result = endpoint(self, *args, **params_ok)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/web/controllers/dataset.py", line 36, in call_kw
-    return call_kw(request.env[model], method, args, kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/api.py", line 525, in call_kw
-    ids, args = args[0], args[1:]
-                ~~~~^^^
-IndexError: list index out of range
-
-The above server error caused the following client error:
-RPC_ERROR: Odoo Server Error
-    RPC_ERROR
-        at makeErrorFromResponse (http://localhost:10018/web/assets/9da13aa/web.assets_web.min.js:3166:163)
-        at XMLHttpRequest.<anonymous> (http://localhost:10018/web/assets/9da13aa/web.assets_web.min.js:3171:13)
+TypeError: result.labels is not iterable
+    at SaleMonthlyForecastChart.renderChart (http://localhost:10018/web/assets/9da13aa/web.assets_web.min.js:22164:25)
