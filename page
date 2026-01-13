@@ -1,9 +1,9 @@
 Odoo Client Error
 
-UncaughtPromiseError > TypeError
-Uncaught Promise > result.labels is not iterable
+UncaughtPromiseError > ReferenceError
+Uncaught Promise > Chart is not defined
 
-Occured on localhost:10018 on 2026-01-13 04:47:56 GMT
+Occured on localhost:10018 on 2026-01-13 04:58:35 GMT
 
-TypeError: result.labels is not iterable
-    at SaleMonthlyForecastChart.renderChart (http://localhost:10018/web/assets/9da13aa/web.assets_web.min.js:22164:25)
+ReferenceError: Chart is not defined
+    at SaleMonthlyForecastChart.renderChart (http://localhost:10018/web/assets/9da13aa/web.assets_web.min.js:22164:243)
