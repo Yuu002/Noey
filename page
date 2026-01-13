@@ -20,29 +20,25 @@ export class SaleMonthlyForecastChart extends Component {
             "get_forecast_chart_data", [], {}
         );
 
-        if (!result) {
+        if (!result || !this.chartRef.el) {
             return;
         }
-
-        const labels = result.labels;
-        const actualData = result.actual;
-        const forecastData = result.forecast;
 
         const ctx = this.chartRef.el.getContext("2d");
 
         new Chart(ctx, {
             type: "line",
             data: {
-                labels: labels,
+                labels: result.labels,
                 datasets: [{
                         label: "Actual Sales",
-                        data: actualData,
+                        data: result.actual,
                         borderWidth: 2,
                         tension: 0.3,
                     },
                     {
                         label: "Forecast",
-                        data: forecastData,
+                        data: result.forecast,
                         borderDash: [5, 5],
                         borderWidth: 2,
                         tension: 0.3,
