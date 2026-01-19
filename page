@@ -138,25 +138,14 @@ Sign up/ Login (Web App + Mobile)
 
 Odoo Client Error
 
-UncaughtPromiseError > OwlError
-Uncaught Promise > An error occured in the owl lifecycle (see this Error's "cause" property)
+UncaughtPromiseError > TypeError
+Uncaught Promise > this.rpc is not a function
 
-Occured on localhost:10018 on 2026-01-19 09:40:12 GMT
+Occured on localhost:10018 on 2026-01-19 09:49:35 GMT
 
-OwlError: An error occured in the owl lifecycle (see this Error's "cause" property)
-    Error: An error occured in the owl lifecycle (see this Error's "cause" property)
-        at handleError (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:972:101)
-        at App.handleError (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:1630:29)
-        at Fiber._render (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:997:19)
-        at Fiber.render (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:995:6)
-        at ComponentNode.initiateRender (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:1065:47)
-
-Caused by: Error: Service rpc is not available
-    at useService (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:4514:219)
-    at ProfitLossDashboard.setup (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:21803:380)
-    at new ComponentNode (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:1060:202)
-    at http://localhost:10018/web/assets/04be819/web.assets_web.min.js:1628:6
-    at ControllerComponent.template (eval at compile (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:1585:421), <anonymous>:9:27)
-    at Fiber._render (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:996:96)
-    at Fiber.render (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:995:6)
-    at ComponentNode.initiateRender (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:1065:47)
+TypeError: this.rpc is not a function
+    at ProfitLossDashboard.renderChart (http://localhost:10018/web/assets/96df201/web.assets_web.min.js:21804:47)
+    at RootFiber.complete (http://localhost:10018/web/assets/96df201/web.assets_web.min.js:1001:165)
+    at Scheduler.processFiber (http://localhost:10018/web/assets/96df201/web.assets_web.min.js:1600:43)
+    at Scheduler.processTasks (http://localhost:10018/web/assets/96df201/web.assets_web.min.js:1594:62)
+    at http://localhost:10018/web/assets/96df201/web.assets_web.min.js:1591:67
