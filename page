@@ -136,12 +136,71 @@ Sign up/ Login (Web App + Mobile)
 - พบ Mismanagement
 - สัตวแพทย์ออก NC ในระบบ"
 
-Odoo Client Error
+/** @odoo-module **/
 
-UncaughtPromiseError > ReferenceError
-Uncaught Promise > d is not defined
+import {registry} from "@web/core/registry";
+import {Component, onMounted} from "@odoo/owl";
+import {useService} from "@web/core/utils/hooks";
 
-Occured on localhost:10018 on 2026-01-19 09:59:10 GMT
+class ProfitLossDashboard extends Component {
+    setup() {
+        this.orm = useService("orm");
+        onMounted(this.renderChart.bind(this));
+    }
 
-ReferenceError: d is not defined
-    at ProfitLossDashboard.renderChart (http://localhost:10018/web/assets/34ef9c0/web.assets_web.min.js:21804:257)
+    async renderChart() {
+        const data = await this.orm.call(
+            "report.account.profit.loss",
+            "get_monthly_profit_loss",
+            [new Date().getFullYear()]
+        );
+
+        const labels = data.map(d => d.month);
+        const income = data.map(d => d.income);
+        const cogs = data.map(d => d.cogs);
+        const profit = data.map(d.profit);
+
+        const ctx = document.getElementById("profitLossChart").getContext("2d");
+
+        new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Income",
+                        data: income,
+                        type: "bar",
+                    },
+                    {
+                        label: "COGS",
+                        data: cogs,
+                        type: "bar",
+                    },
+                    {
+                        label: "Profit/Loss",
+                        data: profit,
+                        type: "line",
+                        tension: 0.3,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {position: "top"},
+                },
+                scales: {
+                    y: {beginAtZero: true},
+                },
+            },
+        });
+    }
+}
+
+ProfitLossDashboard.template = "ProfitLossDashboard";
+
+registry.category("actions").add(
+    "profit_loss_dashboard",
+    ProfitLossDashboard
+);
