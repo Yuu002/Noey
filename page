@@ -136,37 +136,12 @@ Sign up/ Login (Web App + Mobile)
 - พบ Mismanagement
 - สัตวแพทย์ออก NC ในระบบ"
 
-Odoo Server Error
+Odoo Client Error
 
-RPC_ERROR
-404: Not Found
+UncaughtPromiseError > ReferenceError
+Uncaught Promise > d is not defined
 
-Occured on localhost:10018 on model /account/profit_loss/data on 2026-01-19 09:55:26 GMT
+Occured on localhost:10018 on 2026-01-19 09:59:10 GMT
 
-Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/odoo/addons/web/controllers/dataset.py", line 22, in _call_kw_readonly
-    model_class = request.registry[params['model']]
-                  ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/modules/registry.py", line 244, in __getitem__
-    return self.models[model_name]
-           ~~~~~~~~~~~^^^^^^^^^^^^
-KeyError: '/account/profit_loss/data'
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2576, in __call__
-    response = request._serve_db()
-               ^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2102, in _serve_db
-    readonly = readonly(rule.endpoint.func.__self__)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/web/controllers/dataset.py", line 24, in _call_kw_readonly
-    raise NotFound() from e
-werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
-
-The above server error caused the following client error:
-RPC_ERROR: 404: Not Found
-    RPC_ERROR
-        at makeErrorFromResponse (http://localhost:10018/web/assets/8498a4c/web.assets_web.min.js:3166:163)
-        at XMLHttpRequest.<anonymous> (http://localhost:10018/web/assets/8498a4c/web.assets_web.min.js:3171:13)
+ReferenceError: d is not defined
+    at ProfitLossDashboard.renderChart (http://localhost:10018/web/assets/34ef9c0/web.assets_web.min.js:21804:257)
