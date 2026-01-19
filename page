@@ -136,122 +136,27 @@ Sign up/ Login (Web App + Mobile)
 - พบ Mismanagement
 - สัตวแพทย์ออก NC ในระบบ"
 
-Odoo Server Error
+Odoo Client Error
 
-RPC_ERROR
-Odoo Server Error
+UncaughtPromiseError > OwlError
+Uncaught Promise > An error occured in the owl lifecycle (see this Error's "cause" property)
 
-Occured on localhost:10018 on model ir.module.module on 2026-01-19 09:15:15 GMT
+Occured on localhost:10018 on 2026-01-19 09:40:12 GMT
 
-Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/odoo/tools/cache.py", line 103, in lookup
-    r = d[key]
-        ~^^^^^
-  File "/usr/lib/python3/dist-packages/decorator.py", line 232, in fun
-    return caller(func, *(extras + args), **kw)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 97, in locked
-    return func(inst, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/tools/lru.py", line 33, in __getitem__
-    a = self.d[obj]
-        ~~~~~~^^^^^
-KeyError: ('ir.model.data', <function IrModelData._xmlid_lookup at 0x79913a1d62a0>, 'account_profit_loss_dashboard.action_profit_loss_dashboard')
+OwlError: An error occured in the owl lifecycle (see this Error's "cause" property)
+    Error: An error occured in the owl lifecycle (see this Error's "cause" property)
+        at handleError (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:972:101)
+        at App.handleError (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:1630:29)
+        at Fiber._render (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:997:19)
+        at Fiber.render (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:995:6)
+        at ComponentNode.initiateRender (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:1065:47)
 
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/odoo/tools/convert.py", line 544, in _tag_root
-    f(rec)
-  File "/usr/lib/python3/dist-packages/odoo/tools/convert.py", line 293, in _tag_menuitem
-    act = self.env.ref(a_action).sudo()
-          ^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/api.py", line 660, in ref
-    res_model, res_id = self['ir.model.data']._xmlid_to_res_model_res_id(
-                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_model.py", line 2258, in _xmlid_to_res_model_res_id
-    return self._xmlid_lookup(xmlid)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/decorator.py", line 232, in fun
-    return caller(func, *(extras + args), **kw)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/tools/cache.py", line 110, in lookup
-    value = d[key] = self.method(*args, **kwargs)
-                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_model.py", line 2251, in _xmlid_lookup
-    raise ValueError('External ID not found in the system: %s' % xmlid)
-ValueError: External ID not found in the system: account_profit_loss_dashboard.action_profit_loss_dashboard
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2166, in _transactioning
-    return service_model.retrying(func, env=self.env)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/service/model.py", line 156, in retrying
-    result = func()
-             ^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2133, in _serve_ir_http
-    response = self.dispatcher.dispatch(rule.endpoint, args)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2381, in dispatch
-    result = self.request.registry['ir.http']._dispatch(endpoint)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_http.py", line 333, in _dispatch
-    result = endpoint(**request.params)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/http.py", line 754, in route_wrapper
-    result = endpoint(self, *args, **params_ok)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/web/controllers/dataset.py", line 42, in call_button
-    action = call_kw(request.env[model], method, args, kwargs)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/api.py", line 535, in call_kw
-    result = getattr(recs, name)(*args, **kwargs)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/decorator.py", line 232, in fun
-    return caller(func, *(extras + args), **kw)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_module.py", line 75, in check_and_log
-    return method(self, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_module.py", line 487, in button_immediate_install
-    return self._button_immediate_function(self.env.registry[self._name].button_install)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_module.py", line 611, in _button_immediate_function
-    registry = modules.registry.Registry.new(self._cr.dbname, update_module=True)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/decorator.py", line 232, in fun
-    return caller(func, *(extras + args), **kw)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 97, in locked
-    return func(inst, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/modules/registry.py", line 129, in new
-    odoo.modules.load_modules(registry, force_demo, status, update_module)
-  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 489, in load_modules
-    processed_modules += load_marked_modules(env, graph,
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 365, in load_marked_modules
-    loaded, processed = load_module_graph(
-                        ^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 228, in load_module_graph
-    load_data(env, idref, mode, kind='data', package=package)
-  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 72, in load_data
-    tools.convert_file(env, package.name, filename, idref, mode, noupdate, kind)
-  File "/usr/lib/python3/dist-packages/odoo/tools/convert.py", line 615, in convert_file
-    convert_xml_import(env, module, fp, idref, mode, noupdate)
-  File "/usr/lib/python3/dist-packages/odoo/tools/convert.py", line 686, in convert_xml_import
-    obj.parse(doc.getroot())
-  File "/usr/lib/python3/dist-packages/odoo/tools/convert.py", line 601, in parse
-    self._tag_root(de)
-  File "/usr/lib/python3/dist-packages/odoo/tools/convert.py", line 557, in _tag_root
-    raise ParseError('while parsing %s:%s, somewhere inside\n%s' % (
-odoo.tools.convert.ParseError: while parsing /mnt/extra-addons/account_profit_loss_dashboard/views/menu.xml:10, somewhere inside
-<menuitem id="menu_profit_loss_root" name="Profit &amp; Loss Dashboard" action="action_profit_loss_dashboard" parent="account.menu_finance_reports" sequence="50"/>
-
-The above server error caused the following client error:
-RPC_ERROR: Odoo Server Error
-    RPC_ERROR
-        at makeErrorFromResponse (http://localhost:10018/web/assets/dc6d148/web.assets_web.min.js:3166:163)
-        at XMLHttpRequest.<anonymous> (http://localhost:10018/web/assets/dc6d148/web.assets_web.min.js:3171:13)
+Caused by: Error: Service rpc is not available
+    at useService (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:4514:219)
+    at ProfitLossDashboard.setup (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:21803:380)
+    at new ComponentNode (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:1060:202)
+    at http://localhost:10018/web/assets/04be819/web.assets_web.min.js:1628:6
+    at ControllerComponent.template (eval at compile (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:1585:421), <anonymous>:9:27)
+    at Fiber._render (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:996:96)
+    at Fiber.render (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:995:6)
+    at ComponentNode.initiateRender (http://localhost:10018/web/assets/04be819/web.assets_web.min.js:1065:47)
