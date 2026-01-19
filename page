@@ -141,7 +141,7 @@ Odoo Server Error
 RPC_ERROR
 404: Not Found
 
-Occured on localhost:10018 on model /account/profit_loss/data on 2026-01-19 09:53:10 GMT
+Occured on localhost:10018 on model /account/profit_loss/data on 2026-01-19 09:55:26 GMT
 
 Traceback (most recent call last):
   File "/usr/lib/python3/dist-packages/odoo/addons/web/controllers/dataset.py", line 22, in _call_kw_readonly
@@ -168,5 +168,5 @@ werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on 
 The above server error caused the following client error:
 RPC_ERROR: 404: Not Found
     RPC_ERROR
-        at makeErrorFromResponse (http://localhost:10018/web/assets/b81543b/web.assets_web.min.js:3166:163)
-        at XMLHttpRequest.<anonymous> (http://localhost:10018/web/assets/b81543b/web.assets_web.min.js:3171:13)
+        at makeErrorFromResponse (http://localhost:10018/web/assets/8498a4c/web.assets_web.min.js:3166:163)
+        at XMLHttpRequest.<anonymous> (http://localhost:10018/web/assets/8498a4c/web.assets_web.min.js:3171:13)
