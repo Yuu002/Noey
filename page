@@ -136,16 +136,37 @@ Sign up/ Login (Web App + Mobile)
 - พบ Mismanagement
 - สัตวแพทย์ออก NC ในระบบ"
 
-Odoo Client Error
+Odoo Server Error
 
-UncaughtPromiseError > TypeError
-Uncaught Promise > this.rpc is not a function
+RPC_ERROR
+404: Not Found
 
-Occured on localhost:10018 on 2026-01-19 09:49:35 GMT
+Occured on localhost:10018 on model /account/profit_loss/data on 2026-01-19 09:53:10 GMT
 
-TypeError: this.rpc is not a function
-    at ProfitLossDashboard.renderChart (http://localhost:10018/web/assets/96df201/web.assets_web.min.js:21804:47)
-    at RootFiber.complete (http://localhost:10018/web/assets/96df201/web.assets_web.min.js:1001:165)
-    at Scheduler.processFiber (http://localhost:10018/web/assets/96df201/web.assets_web.min.js:1600:43)
-    at Scheduler.processTasks (http://localhost:10018/web/assets/96df201/web.assets_web.min.js:1594:62)
-    at http://localhost:10018/web/assets/96df201/web.assets_web.min.js:1591:67
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/odoo/addons/web/controllers/dataset.py", line 22, in _call_kw_readonly
+    model_class = request.registry[params['model']]
+                  ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/modules/registry.py", line 244, in __getitem__
+    return self.models[model_name]
+           ~~~~~~~~~~~^^^^^^^^^^^^
+KeyError: '/account/profit_loss/data'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2576, in __call__
+    response = request._serve_db()
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2102, in _serve_db
+    readonly = readonly(rule.endpoint.func.__self__)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/addons/web/controllers/dataset.py", line 24, in _call_kw_readonly
+    raise NotFound() from e
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+
+The above server error caused the following client error:
+RPC_ERROR: 404: Not Found
+    RPC_ERROR
+        at makeErrorFromResponse (http://localhost:10018/web/assets/b81543b/web.assets_web.min.js:3166:163)
+        at XMLHttpRequest.<anonymous> (http://localhost:10018/web/assets/b81543b/web.assets_web.min.js:3171:13)
