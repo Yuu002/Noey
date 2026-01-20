@@ -100,7 +100,6 @@ registry.category("actions").add(
 C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\models\profit_loss_report.py
 from odoo import models, api
 from collections import defaultdict
-from datetime import date
 
 class ProfitLossReport(models.AbstractModel):
     _name = "report.account.profit.loss"
@@ -112,43 +111,37 @@ class ProfitLossReport(models.AbstractModel):
         result = defaultdict(lambda: {"income": 0.0, "cogs": 0.0})
 
         domain = [
-            ("move_id.state", "=", company_id),
+            ("move_id.state", "=", "posted"),
             ("move_id.company_id", "=", company_id),
             ("move_id.date", ">=", f"{year}-01-01"),
             ("move_id.date", "<=", f"{year}-12-31"),
+            ("account_id.code", "=like", "4%"),
         ]
 
         lines = self.env["account.move.line"].search(domain)
 
         for line in lines:
             month = line.move_id.date.strftime("%Y-%m")
+            code = line.account_id.code or ""
 
             # Income: 41000 (Customer Invoice)
-            if (
-                line.move_id.move_type == "out_invoice"
-                and line.account_id.code == "41000"
-            ):
+            if code.startswith("41"):
                 result[month]["income"] += line.credit - line.debit
 
             # COGS: 51xxx (Vendor Bill)
-            if (
-                line.move_id.move_type == "in_invoice"
-                and line.account_id.code
-                and line.account_id.code.startswith("51")
-            ):
+            elif code.startswith("51"):
                 result[month]["cogs"] += line.debit - line.credit
 
         data = []
-        for month in sorted(result.keys()):
+        for month in sorted(result):
             income = result[month]["income"]
             cogs = result[month]["cogs"]
-            profit = income - cogs
 
             data.append({
                 "month": month,
                 "income": round(income, 2),
                 "cogs": round(cogs, 2),
-                "profit": round(profit, 2),
+                "profit": round(income - cogs, 2),
             })
         return data
 
@@ -217,6 +210,7 @@ C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\__manifest__.py
     ],
     'assets': {
         'web.assets_backend': [
+            'web/static/lib/chartjs/chart.js'
             'account_profit_loss_dashboard/static/src/js/profit_loss_chart.js',
             'account_profit_loss_dashboard/static/src/xml/profit_loss_chart.xml',
         ],
@@ -230,11 +224,12 @@ Odoo Client Error
 UncaughtPromiseError > KeyNotFoundError
 Uncaught Promise > Cannot find key "profit_loss_dashboard" in the "actions" registry
 
-Occured on localhost:10018 on 2026-01-20 07:52:28 GMT
+Occured on localhost:10018 on 2026-01-20 07:57:38 GMT
 
 KeyNotFoundError: Cannot find key "profit_loss_dashboard" in the "actions" registry
     Error: Cannot find key "profit_loss_dashboard" in the "actions" registry
-        at Registry.get (http://localhost:10018/web/assets/acae18c/web.assets_web.min.js:3695:76)
-        at _executeClientAction (http://localhost:10018/web/assets/acae18c/web.assets_web.min.js:10093:87)
-        at Object.doAction (http://localhost:10018/web/assets/acae18c/web.assets_web.min.js:10110:192)
-        at async Object.selectMenu (http://localhost:10018/web/assets/acae18c/web.assets_web.min.js:10309:1)
+        at Registry.get (http://localhost:10018/web/assets/b5787b3/web.assets_web.min.js:3695:76)
+        at _executeClientAction (http://localhost:10018/web/assets/b5787b3/web.assets_web.min.js:10093:87)
+        at doAction (http://localhost:10018/web/assets/b5787b3/web.assets_web.min.js:10110:192)
+        at async Object.loadState (http://localhost:10018/web/assets/b5787b3/web.assets_web.min.js:10139:1)
+        at async WebClient.loadRouterState (http://localhost:10018/web/assets/b5787b3/web.assets_web.min.js:10572:17)
