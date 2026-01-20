@@ -134,9 +134,4 @@ Sign up/ Login (Web App + Mobile)
 ระบบ Auto Generate Email (Web App)
 - Trigger ให้ระบบแจ้งเตือนสัตวแพทย์ให้ทำการออก NC (Non-Conformance) โดยการ Generate ใบ NC อัตโนมัติ และให้สัตวแพทย์ Confim เพื่อทำการส่ง และบันทึกเก็บไว้
 - พบ Mismanagement
-- สัตวแพทย์ออก NC ในระบบ"
-
-action-919:1 Failed to fetch a worker script.Understand this error
-web.assets_web.min.js:10716 Error while loading "bus_service" SharedWorker, fallback on Worker.
-(anonymous) @ web.assets_web.min.js:10716Understand this warning
-web.assets_web.min.js:10716 Bus service failed to initialized.
+- สัตวแพทย์ออก NC ในระบบ
