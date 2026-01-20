@@ -305,6 +305,9 @@ C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sales_monthly_fore
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+    <!-- ===============================
+         Form View
+         =============================== -->
     <record id="view_sale_monthly_forecast_form" model="ir.ui.view">
         <field name="name">sale.monthly.forecast.form</field>
         <field name="model">sale.monthly.forecast</field>
@@ -330,18 +333,22 @@ C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sales_monthly_fore
                     <separator string="Monthly Sales Chart"/>
 
                     <div class="o_sale_monthly_forecast_chart_container"
-                        style="width:100%; pandding:16px;">
-                        
+                         style="width:100%; padding:16px;">
+
                         <canvas
                             class="o_sale_monthly_forecast_chart"
-                            style="width:100%; height:400px;"   
+                            style="width:100%; height:400px;"
                         />
                     </div>
+
                 </sheet>
             </form>
         </field>
     </record>
 
+    <!-- ===============================
+         Action
+         =============================== -->
     <record id="action_sale_monthly_forecast" model="ir.actions.act_window">
         <field name="name">Sales Forecast</field>
         <field name="res_model">sale.monthly.forecast</field>
@@ -349,8 +356,11 @@ C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sales_monthly_fore
         <field name="target">current</field>
     </record>
 
+    <!-- ===============================
+         Menu
+         =============================== -->
     <menuitem
-        id="model_sale_monthly_forecast"
+        id="menu_sale_monthly_forecast"
         name="Sales Forecast"
         action="action_sale_monthly_forecast"
         parent="sale.sale_menu_root"
@@ -358,88 +368,3 @@ C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sales_monthly_fore
     />
 
 </odoo>
-
-
-Odoo Server Error
-
-RPC_ERROR
-Odoo Server Error
-
-Occured on localhost:10018 on model ir.module.module on 2026-01-20 10:36:52 GMT
-
-Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2166, in _transactioning
-    return service_model.retrying(func, env=self.env)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/service/model.py", line 156, in retrying
-    result = func()
-             ^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2133, in _serve_ir_http
-    response = self.dispatcher.dispatch(rule.endpoint, args)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2381, in dispatch
-    result = self.request.registry['ir.http']._dispatch(endpoint)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_http.py", line 333, in _dispatch
-    result = endpoint(**request.params)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/http.py", line 754, in route_wrapper
-    result = endpoint(self, *args, **params_ok)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/web/controllers/dataset.py", line 42, in call_button
-    action = call_kw(request.env[model], method, args, kwargs)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/api.py", line 535, in call_kw
-    result = getattr(recs, name)(*args, **kwargs)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/decorator.py", line 232, in fun
-    return caller(func, *(extras + args), **kw)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_module.py", line 75, in check_and_log
-    return method(self, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_module.py", line 487, in button_immediate_install
-    return self._button_immediate_function(self.env.registry[self._name].button_install)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_module.py", line 611, in _button_immediate_function
-    registry = modules.registry.Registry.new(self._cr.dbname, update_module=True)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/decorator.py", line 232, in fun
-    return caller(func, *(extras + args), **kw)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 97, in locked
-    return func(inst, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/modules/registry.py", line 129, in new
-    odoo.modules.load_modules(registry, force_demo, status, update_module)
-  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 489, in load_modules
-    processed_modules += load_marked_modules(env, graph,
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 365, in load_marked_modules
-    loaded, processed = load_module_graph(
-                        ^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 228, in load_module_graph
-    load_data(env, idref, mode, kind='data', package=package)
-  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 72, in load_data
-    tools.convert_file(env, package.name, filename, idref, mode, noupdate, kind)
-  File "/usr/lib/python3/dist-packages/odoo/tools/convert.py", line 615, in convert_file
-    convert_xml_import(env, module, fp, idref, mode, noupdate)
-  File "/usr/lib/python3/dist-packages/odoo/tools/convert.py", line 686, in convert_xml_import
-    obj.parse(doc.getroot())
-  File "/usr/lib/python3/dist-packages/odoo/tools/convert.py", line 601, in parse
-    self._tag_root(de)
-  File "/usr/lib/python3/dist-packages/odoo/tools/convert.py", line 555, in _tag_root
-    raise ParseError(msg) from None  # Restart with "--log-handler odoo.tools.convert:DEBUG" for complete traceback
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-odoo.tools.convert.ParseError: while parsing /mnt/extra-addons/sales_monthly_forecast/views/sales_monthly_forecast_view.xml:54
-For external id sales_monthly_forecast.model_sale_monthly_forecast when trying to create/update a record of model ir.ui.menu found record of different model ir.model (63248)
-
-View error context:
-'-no context-'
-
-
-The above server error caused the following client error:
-RPC_ERROR: Odoo Server Error
-    RPC_ERROR
-        at makeErrorFromResponse (http://localhost:10018/web/assets/e5a263a/web.assets_web.min.js:3166:163)
-        at XMLHttpRequest.<anonymous> (http://localhost:10018/web/assets/e5a263a/web.assets_web.min.js:3171:13)
