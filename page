@@ -224,7 +224,7 @@ Odoo Server Error
 RPC_ERROR
 Odoo Server Error
 
-Occured on localhost:10018 on model ir.module.module on 2026-01-20 09:15:13 GMT
+Occured on localhost:10018 on model ir.module.module on 2026-01-20 09:17:53 GMT
 
 Traceback (most recent call last):
   File "/usr/lib/python3/dist-packages/odoo/http.py", line 2166, in _transactioning
