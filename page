@@ -227,10 +227,14 @@ C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\__manifest__.py
 
 Odoo Client Error
 
-UncaughtPromiseError > ReferenceError
-Uncaught Promise > Chart is not defined
+UncaughtPromiseError > KeyNotFoundError
+Uncaught Promise > Cannot find key "profit_loss_dashboard" in the "actions" registry
 
-Occured on localhost:10018 on 2026-01-20 07:46:38 GMT
+Occured on localhost:10018 on 2026-01-20 07:52:28 GMT
 
-ReferenceError: Chart is not defined
-    at ProfitLossDashboard.renderChart (http://localhost:10018/web/assets/cef38cf/web.assets_web.min.js:21808:151)
+KeyNotFoundError: Cannot find key "profit_loss_dashboard" in the "actions" registry
+    Error: Cannot find key "profit_loss_dashboard" in the "actions" registry
+        at Registry.get (http://localhost:10018/web/assets/acae18c/web.assets_web.min.js:3695:76)
+        at _executeClientAction (http://localhost:10018/web/assets/acae18c/web.assets_web.min.js:10093:87)
+        at Object.doAction (http://localhost:10018/web/assets/acae18c/web.assets_web.min.js:10110:192)
+        at async Object.selectMenu (http://localhost:10018/web/assets/acae18c/web.assets_web.min.js:10309:1)
