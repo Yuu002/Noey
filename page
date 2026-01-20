@@ -1,0 +1,205 @@
+C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\static\src\js\profit_loss_chart.js
+/** @odoo-module **/
+
+import {registry} from "@web/core/registry";
+import {Component, onMounted} from "@odoo/owl";
+import {useService} from "@web/core/utils/hooks";
+
+class ProfitLossDashboard extends Component {
+    setup() {
+        this.orm = useService("orm");
+        onMounted(this.renderChart.bind(this));
+    }
+
+    async renderChart() {
+        const data = await this.orm.call(
+            "report.account.profit.loss",
+            "get_monthly_profit_loss",
+            [new Date().getFullYear()]
+        );
+
+        if (!data || !data.legend) {
+            return;
+        }
+
+        const labels = data.map(d => d.month);
+        const income = data.map(d => d.income);
+        const cogs = data.map(d => d.cogs);
+        const profit = data.map(d => d.profit);
+
+        const canvas = document.getElementById("profitLossChart");
+        if (!canvas) {
+            return;
+        }
+        
+        const ctx = canvas.getContext("2d");
+
+        new Chart(ctx, {
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Income",
+                        data: income,
+                        type: "bar",
+                    },
+                    {
+                        label: "COGS",
+                        data: cogs,
+                        type: "bar",
+                    },
+                    {
+                        label: "Profit/Loss",
+                        data: profit,
+                        type: "line",
+                        tension: 0.3,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {position: "top"},
+                },
+                scales: {
+                    y: {beginAtZero: true},
+                },
+            },
+        });
+    }
+}
+
+ProfitLossDashboard.template = "ProfitLossDashboard";
+
+registry.category("actions").add(
+    "profit_loss_dashboard",
+    ProfitLossDashboard
+);
+
+C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\models\profit_loss_report.py
+from odoo import models, api
+from collections import defaultdict
+from datetime import date
+
+class ProfitLossReport(models.AbstractModel):
+    _name = "report.account.profit.loss"
+    _description = "Monthly Profit and Loss Report"
+
+    @api.model
+    def get_monthly_profit_loss(self, year):
+        company_id = self.env.company.id
+        result = defaultdict(lambda: {"income": 0.0, "cogs": 0.0})
+
+        domain = [
+            ("move_id.state", "=", company_id),
+            ("move_id.company_id", "=", company_id),
+            ("move_id.date", ">=", f"{year}-01-01"),
+            ("move_id.date", "<=", f"{year}-12-31"),
+        ]
+
+        lines = self.env["account.move.line"].search(domain)
+
+        for line in lines:
+            month = line.move_id.date.strftime("%Y-%m")
+
+            # Income: 41000 (Customer Invoice)
+            if (
+                line.move_id.move_type == "out_invoice"
+                and line.account_id.code == "41000"
+            ):
+                result[month]["income"] += line.credit - line.debit
+
+            # COGS: 51xxx (Vendor Bill)
+            if (
+                line.move_id.move_type == "in_invoice"
+                and line.account_id.code
+                and line.account_id.code.startswith("51")
+            ):
+                result[month]["cogs"] += line.debit - line.credit
+
+        data = []
+        for month in sorted(result.keys()):
+            income = result[month]["income"]
+            cogs = result[month]["cogs"]
+            profit = income - cogs
+
+            data.append({
+                "month": month,
+                "income": round(income, 2),
+                "cogs": round(cogs, 2),
+                "profit": round(profit, 2),
+            })
+        return data
+
+        C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\security\ir.model.access.csv
+        id, name, model_id:id, group_id:id, perm_read, perm_write, perm_create, perm_unlink
+
+        C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\models\__init__.py
+        from . import profit_loss_report
+
+        C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\static\src\xml\profit_loss_chart.xml
+        <?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+    <t t-name="ProfitLossDashboard">
+        <div class="o_profit_loss_dashboard">
+            <h2>Monthly Profit &amp; Loss</h2>
+
+            <div style="height:400px;">
+                <canvas id="profitLossChart"></canvas>
+            </div>
+        </div>
+    </t>
+</templates>
+
+C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\views\menu.xml
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_profit_loss_root"
+        name="Profit &amp; Loss Dashboard"
+        action="action_profit_loss_dashboard"
+        parent="account.menu_finance_reports"
+        sequence="50"
+    />
+
+</odoo>
+
+
+C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\views\profit_loss_dashboard_view.xml
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_profit_loss_dashboard" model="ir.actions.client">
+        <field name="name">Profit &amp; Loss Dashboard</field>
+        <field name="tag">profit_loss_dashboard</field>
+    </record>
+
+</odoo>
+
+C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\__init__.py
+from . import models
+from . import controllers
+
+C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\__manifest__.py
+{
+    'name': 'Accounting Profi & Loss Trend Dashborad',
+    'version': '18.0.1.0.0',
+    'summary': 'Monthly Profi & Loss Dashborad',
+    'category': 'Accounting',
+    'depends': ['account', 'web'],
+    "author": "Thanchanok",
+    'data': [
+        'views/profit_loss_dashboard_view.xml',
+        'views/menu.xml',
+        'security/ir.model.access.csv',
+    ],
+    'assets': {
+        'web.assets_backend': [
+            'account_profit_loss_dashboard/static/src/js/profit_loss_chart.js',
+            'account_profit_loss_dashboard/static/src/xml/profit_loss_chart.xml',
+        ],
+    },
+    'installable': True,
+    'application': False,
+}
