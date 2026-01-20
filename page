@@ -5,21 +5,41 @@ import {registry} from "@web/core/registry";
 import {Component, onMounted} from "@odoo/owl";
 import {useService} from "@web/core/utils/hooks";
 
-class ProfitLossDashboard extends Component {
+export class ProfitLossDashboard extends Component {
     setup() {
         this.orm = useService("orm");
-        onMounted(this.renderChart.bind(this));
+        onMounted(() => {
+            this.renderChart();
+        });
     }
 
     async renderChart() {
-        const data = await this.orm.call(
-            "report.account.profit.loss",
-            "get_monthly_profit_loss",
-            [new Date().getFullYear()]
-        );
-
-        if (!data || !data.legend) {
+        let data;
+        try {
+            data = await this.orm.call(
+                "report.account.profit.loss",
+                "get_monthly_profit_loss",
+                [new Date().getFullYear()]
+            );
+        } catch(error) {
+            console.error("RPC error while fetching P&L data", error);
             return;
+        }
+
+        if(!Array.isArray(data) || !data.length) {
+            console.warn("No date for Profit&Loss chart", data);
+            return;
+        }
+
+        const canvas = document.getElementById("profitLossChart");
+        if(!canvas) {
+            console.error("Canvas #profitLossChart not found");
+            return;
+        }
+
+        const ctx = canvas.getContext("2d");
+        if(this.chart) {
+            this.chart.destroy();
         }
 
         const labels = data.map(d => d.month);
@@ -27,30 +47,23 @@ class ProfitLossDashboard extends Component {
         const cogs = data.map(d => d.cogs);
         const profit = data.map(d => d.profit);
 
-        const canvas = document.getElementById("profitLossChart");
-        if (!canvas) {
-            return;
-        }
-        
-        const ctx = canvas.getContext("2d");
-
-        new Chart(ctx, {
+        this.chart = new Chart(ctx, {
             data: {
                 labels: labels,
                 datasets: [
                     {
                         label: "Income",
-                        data: income,
+                        date: income,
                         type: "bar",
                     },
                     {
                         label: "COGS",
-                        data: cogs,
+                        date: cogs,
                         type: "bar",
                     },
                     {
                         label: "Profit/Loss",
-                        data: profit,
+                        date: profit,
                         type: "line",
                         tension: 0.3,
                     },
@@ -58,17 +71,25 @@ class ProfitLossDashboard extends Component {
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
-                    legend: {position: "top"},
+                    legend: {
+                        position: "top",
+                    },
+                    tooltip: {
+                        mode: "index",
+                        intersect: false,
+                    },
                 },
                 scales: {
-                    y: {beginAtZero: true},
+                    y: {
+                        beginAtZero: true,
+                    },
                 },
             },
         });
     }
 }
-
 ProfitLossDashboard.template = "ProfitLossDashboard";
 
 registry.category("actions").add(
