@@ -203,3 +203,17 @@ C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\__manifest__.py
     'installable': True,
     'application': False,
 }
+
+click .o_app[data-menu-xmlid='sale.sale_menu_root']
+dashboards?dashboard_id=1:1 Failed to fetch a worker script.
+web.assets_web.min.js:10716 Error while loading "bus_service" SharedWorker, fallback on Worker.
+web.assets_web.min.js:10716 Bus service failed to initialized.
+web.assets_web.min.js:21805 No date for Profit&Loss chart 
+Array(0)
+length
+: 
+0
+[[Prototype]]
+: 
+Array(0)
+renderChart	@	web.assets_web.min.js:21805
