@@ -102,16 +102,11 @@ class SaleMonthlyForecast(models.Model):
         readonly=True
     )
 
-    # core method
+    # ===============================
+    # Compute Forecast (เหมือนเดิม)
+    # ===============================
     def action_compute_forecast(self):
-        """
-        1) Pull sale.order from Odoo
-        2) Aggregate sales by month
-        3) Call predict.py
-        4) Save forecast result
-        """
 
-        # 1) fetch confirmed sales orders
         orders = self.env["sale.order"].search([
             ("state", "in", ["sale", "done"]),
             ("date_order", "!=", False)
@@ -120,7 +115,6 @@ class SaleMonthlyForecast(models.Model):
         if not orders:
             raise UserError("No confirmed sales orders found.")
 
-        # 2) aggregate monthly sales
         monthly_totals = defaultdict(float)
 
         for order in orders:
@@ -133,13 +127,11 @@ class SaleMonthlyForecast(models.Model):
             for month in sorted(monthly_totals.keys())
         ]
 
-        # 3) call forecast function
         try:
             result = forecast_next_month(monthly_sales)
         except Exception as e:
             raise UserError(str(e))
 
-        # 4) save result to record
         self.write({
             "forecast_month": result["forecast_month"],
             "forecast_sales": result["forecast_sales"],
@@ -147,7 +139,33 @@ class SaleMonthlyForecast(models.Model):
 
         return True
 
-    # data for chart (used by js)
+    # =====================================================
+    # STEP 1: ดึงยอดขายจริง (Actual Sales อย่างเดียว)
+    # =====================================================
+    @api.model
+    def get_actual_sales_chart_data(self):
+        # เปลี่ยน: method ใหม่ สำหรับ STEP 1
+
+        orders = self.env["sale.order"].search([
+            ("state", "in", ["sale", "done"]),
+            ("date_order", "!=", False)
+        ], order="date_order ASC")
+
+        monthly_totals = defaultdict(float)
+
+        for order in orders:
+            order_date = fields.Datetime.to_datetime(order.date_order)
+            month_key = order_date.strftime("%B %Y")
+            monthly_totals[month_key] += order.amount_total
+
+        return {
+            "labels": list(monthly_totals.keys()),
+            "actual": list(monthly_totals.values()),
+        }
+
+    # =====================================================
+    # (ของเก่า) ยังไม่ลบ – เอาไว้ STEP 2
+    # =====================================================
     @api.model
     def get_forecast_chart_data(self, record_id):
         record = self.browse(record_id)
@@ -188,48 +206,47 @@ access_sale_monthly_forecast,sale.monthly.forecast,model_sale_monthly_forecast,,
 C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\js\sales_monthly_forecast_chart.js
 /** @odoo-module **/
 
-import { registry } from "@web/core/registry";
-import { Component, onMounted, useRef } from "@odoo/owl";
+import { Component, onMounted } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 
 export class SaleMonthlyForecastChart extends Component {
     setup() {
         this.orm = useService("orm");
-        this.chartRef = useRef("chart");
 
         onMounted(() => {
-            this.renderChart();
+            this.renderActualChart(); // เปลี่ยน: วาดกราฟทันที
         });
     }
 
-    async renderChart() {
-        const recordId = this.props.action.context.active_id;
-
-        const result = await this.orm.call(
-            "sale.monthly.forecast",
-            "get_forecast_chart_data", [recordId], {}
+    async renderActualChart() {
+        // เปลี่ยน: หา canvas จาก DOM โดยตรง
+        const canvas = document.querySelector(
+            ".o_sale_monthly_forecast_chart"
         );
 
-        if (!result || !this.chartRef.el) {
+        if (!canvas) {
             return;
         }
 
-        const ctx = this.chartRef.el.getContext("2d");
+        // เปลี่ยน: เรียก method สำหรับ Actual อย่างเดียว
+        const result = await this.orm.call(
+            "sale.monthly.forecast",
+            "get_actual_sales_chart_data",
+            [],
+            {}
+        );
 
-        new Chart(ctx, {
+        const ctx = canvas.getContext("2d");
+
+        // เปลี่ยน: วาดเฉพาะเส้นฟ้า
+        this.chart = new Chart(ctx, {
             type: "line",
             data: {
                 labels: result.labels,
-                datasets: [{
+                datasets: [
+                    {
                         label: "Actual Sales",
                         data: result.actual,
-                        borderWidth: 2,
-                        tension: 0.3,
-                    },
-                    {
-                        label: "Forecast",
-                        data: result.forecast,
-                        borderDash: [5, 5],
                         borderWidth: 2,
                         tension: 0.3,
                     },
@@ -251,12 +268,6 @@ export class SaleMonthlyForecastChart extends Component {
         });
     }
 }
-
-SaleMonthlyForecastChart.template = "sale_monthly_forecast_chart_template";
-registry.category("actions").add(
-    "sale_monthly_forecast_chart",
-    SaleMonthlyForecastChart
-);
 
 C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\xml\sales_monthly_forecast_chart.xml
 <?xml version="1.0" encoding="utf-8"?>
