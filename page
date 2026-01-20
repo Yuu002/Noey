@@ -219,24 +219,83 @@ C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\__manifest__.py
     'application': False,
 }
 
-Odoo Client Error
+Odoo Server Error
 
-UncaughtPromiseError > ReferenceError
-Uncaught Promise > Chart is not defined
+RPC_ERROR
+Odoo Server Error
 
-Occured on localhost:10018 on 2026-01-20 08:03:13 GMT
+Occured on localhost:10018 on model ir.module.module on 2026-01-20 09:10:51 GMT
 
-ReferenceError: Chart is not defined
-    at ProfitLossDashboard.renderChart (http://localhost:10018/web/assets/e80a0b1/web.assets_web.min.js:21811:151)
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2166, in _transactioning
+    return service_model.retrying(func, env=self.env)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/service/model.py", line 156, in retrying
+    result = func()
+             ^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2133, in _serve_ir_http
+    response = self.dispatcher.dispatch(rule.endpoint, args)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/http.py", line 2381, in dispatch
+    result = self.request.registry['ir.http']._dispatch(endpoint)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_http.py", line 333, in _dispatch
+    result = endpoint(**request.params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/http.py", line 754, in route_wrapper
+    result = endpoint(self, *args, **params_ok)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/addons/web/controllers/dataset.py", line 42, in call_button
+    action = call_kw(request.env[model], method, args, kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/api.py", line 535, in call_kw
+    result = getattr(recs, name)(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/decorator.py", line 232, in fun
+    return caller(func, *(extras + args), **kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_module.py", line 75, in check_and_log
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_module.py", line 487, in button_immediate_install
+    return self._button_immediate_function(self.env.registry[self._name].button_install)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/addons/base/models/ir_module.py", line 611, in _button_immediate_function
+    registry = modules.registry.Registry.new(self._cr.dbname, update_module=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/decorator.py", line 232, in fun
+    return caller(func, *(extras + args), **kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/tools/func.py", line 97, in locked
+    return func(inst, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/modules/registry.py", line 129, in new
+    odoo.modules.load_modules(registry, force_demo, status, update_module)
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 489, in load_modules
+    processed_modules += load_marked_modules(env, graph,
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 365, in load_marked_modules
+    loaded, processed = load_module_graph(
+                        ^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 228, in load_module_graph
+    load_data(env, idref, mode, kind='data', package=package)
+  File "/usr/lib/python3/dist-packages/odoo/modules/loading.py", line 72, in load_data
+    tools.convert_file(env, package.name, filename, idref, mode, noupdate, kind)
+  File "/usr/lib/python3/dist-packages/odoo/tools/convert.py", line 611, in convert_file
+    convert_csv_import(env, module, pathname, fp.read(), idref, mode, noupdate)
+  File "/usr/lib/python3/dist-packages/odoo/tools/convert.py", line 653, in convert_csv_import
+    result = env[model].with_context(**context).load(fields, datas)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/odoo/models.py", line 1418, in load
+    for id, xid, record, info in converted:
+  File "/usr/lib/python3/dist-packages/odoo/models.py", line 1599, in _convert_records
+    for stream_index, (record, extras) in enumerate(records):
+  File "/usr/lib/python3/dist-packages/odoo/models.py", line 1484, in _extract_records
+    raise ValueError(f'Invalid field name {fname!r}')
+ValueError: Invalid field name ' name'
 
-web.assets_web.min.js:21803 'Could not get content for web/static/lib/chartjs/chart.js.' in file 'web/static/lib/chartjs/chart.js'
-(anonymous)	@	web.assets_web.min.js:21803
-web.assets_web.min.js:10856 click .o_app[data-menu-xmlid='sale.sale_menu_root']
-action-919:1 Failed to fetch a worker script.
-web.assets_web.min.js:10716 Error while loading "bus_service" SharedWorker, fallback on Worker.
-(anonymous)	@	web.assets_web.min.js:10716
-web.assets_web.min.js:10716 Bus service failed to initialized.
-(anonymous)	@	web.assets_web.min.js:10716
-web.assets_web.min.js:2601 ReferenceError: Chart is not defined
-    at ProfitLossDashboard.renderChart (web.assets_web.min.js:21811:151)
-handleError	@	web.assets_web.min.js:2601
+The above server error caused the following client error:
+RPC_ERROR: Odoo Server Error
+    RPC_ERROR
+        at makeErrorFromResponse (http://localhost:10018/web/assets/dc6d148/web.assets_web.min.js:3166:163)
+        at XMLHttpRequest.<anonymous> (http://localhost:10018/web/assets/dc6d148/web.assets_web.min.js:3171:13)
