@@ -221,15 +221,22 @@ C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\__manifest__.py
 
 Odoo Client Error
 
-UncaughtPromiseError > KeyNotFoundError
-Uncaught Promise > Cannot find key "profit_loss_dashboard" in the "actions" registry
+UncaughtPromiseError > ReferenceError
+Uncaught Promise > Chart is not defined
 
-Occured on localhost:10018 on 2026-01-20 07:57:38 GMT
+Occured on localhost:10018 on 2026-01-20 08:03:13 GMT
 
-KeyNotFoundError: Cannot find key "profit_loss_dashboard" in the "actions" registry
-    Error: Cannot find key "profit_loss_dashboard" in the "actions" registry
-        at Registry.get (http://localhost:10018/web/assets/b5787b3/web.assets_web.min.js:3695:76)
-        at _executeClientAction (http://localhost:10018/web/assets/b5787b3/web.assets_web.min.js:10093:87)
-        at doAction (http://localhost:10018/web/assets/b5787b3/web.assets_web.min.js:10110:192)
-        at async Object.loadState (http://localhost:10018/web/assets/b5787b3/web.assets_web.min.js:10139:1)
-        at async WebClient.loadRouterState (http://localhost:10018/web/assets/b5787b3/web.assets_web.min.js:10572:17)
+ReferenceError: Chart is not defined
+    at ProfitLossDashboard.renderChart (http://localhost:10018/web/assets/e80a0b1/web.assets_web.min.js:21811:151)
+
+web.assets_web.min.js:21803 'Could not get content for web/static/lib/chartjs/chart.js.' in file 'web/static/lib/chartjs/chart.js'
+(anonymous)	@	web.assets_web.min.js:21803
+web.assets_web.min.js:10856 click .o_app[data-menu-xmlid='sale.sale_menu_root']
+action-919:1 Failed to fetch a worker script.
+web.assets_web.min.js:10716 Error while loading "bus_service" SharedWorker, fallback on Worker.
+(anonymous)	@	web.assets_web.min.js:10716
+web.assets_web.min.js:10716 Bus service failed to initialized.
+(anonymous)	@	web.assets_web.min.js:10716
+web.assets_web.min.js:2601 ReferenceError: Chart is not defined
+    at ProfitLossDashboard.renderChart (web.assets_web.min.js:21811:151)
+handleError	@	web.assets_web.min.js:2601
