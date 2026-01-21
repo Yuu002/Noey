@@ -3,16 +3,16 @@ Odoo Client Error
 UncaughtPromiseError > KeyNotFoundError
 Uncaught Promise > Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
 
-Occured on localhost:10018 on 2026-01-21 10:53:03 GMT
+Occured on localhost:10018 on 2026-01-21 10:57:47 GMT
 
 KeyNotFoundError: Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
     Error: Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
-        at Registry.get (http://localhost:10018/web/assets/a45c1f8/web.assets_web.min.js:3695:76)
-        at _executeClientAction (http://localhost:10018/web/assets/a45c1f8/web.assets_web.min.js:10093:87)
-        at doAction (http://localhost:10018/web/assets/a45c1f8/web.assets_web.min.js:10110:192)
-        at async Object.doActionButton (http://localhost:10018/web/assets/a45c1f8/web.assets_web.min.js:10121:249)
-        at async execute (http://localhost:10018/web/assets/a45c1f8/web.assets_web.min.js:9720:301)
-        at async executeButtonCallback (http://localhost:10018/web/assets/a45c1f8/web.assets_web.min.js:9713:34)
+        at Registry.get (http://localhost:10018/web/assets/5cc2d9a/web.assets_web.min.js:3695:76)
+        at _executeClientAction (http://localhost:10018/web/assets/5cc2d9a/web.assets_web.min.js:10093:87)
+        at doAction (http://localhost:10018/web/assets/5cc2d9a/web.assets_web.min.js:10110:192)
+        at async Object.doActionButton (http://localhost:10018/web/assets/5cc2d9a/web.assets_web.min.js:10121:249)
+        at async execute (http://localhost:10018/web/assets/5cc2d9a/web.assets_web.min.js:9720:301)
+        at async executeButtonCallback (http://localhost:10018/web/assets/5cc2d9a/web.assets_web.min.js:9713:34)
 
 C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\js\sales_monthly_forecast_chart.js
 /** @odoo-module **/
@@ -129,7 +129,7 @@ export class SaleMonthlyForecastChart extends Component {
     }
 
     openInvoiceReport(label) {
-        const date = moment(label, "MMMM YYYY", {locale: "en"});
+        const date = DateTime.fromFormat(label, "MMMM YYYY", {locale: "en"});
 
         if(!date.isValid) {
             console.error("Invalid date label:", label);
@@ -157,3 +157,33 @@ registry.category("actions").add(
     "sale_monthly_forecast_chart",
     SaleMonthlyForecastChart
 );
+
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\__manifest__.py
+# -*- coding: utf-8 -*-
+{
+    "name": "Monthly Sales Forecast",
+    "version": "18.0.1.0.0",
+    "category": "Sales",
+    "summary": "Forecast monthly sales using ARIMA",
+    "description": """
+        Forecast monthly sales one month ahead
+        using a trained ARIMA model and display
+        the result as a line chart.
+    """,
+    "author": "Thanchanok",
+    "depends": ["sale", "web"],
+    "data": [
+        "security/ir.model.access.csv",
+        "views/sales_monthly_forecast_view.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "web/static/lib/Chart/Chart.js",
+            "sales_monthly_forecast/static/src/xml/sales_monthly_forecast_chart.xml",
+            "sales_monthly_forecast/static/src/js/sales_monthly_forecast_chart.js",
+            "sales_monthly_forecast/static/src/css/sale_monthly_forecast.css",
+        ],
+    },
+    "installable": True,
+    "application": False,
+}
