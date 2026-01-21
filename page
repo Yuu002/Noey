@@ -1,76 +1,91 @@
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\data\arima_model.pkl
-อันนี้มีไฟล์ arima.pkl อยู่ ไม่ต้องยุ่ง เพราะมันได้เซ็ตไว้แล้ว
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\js\sales_monthly_forecast_chart.js
+/** @odoo-module **/
 
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\models\__init__.py
-from . import sales_monthly_forecast
-from . import predict
+import { registry } from "@web/core/registry";
+import { Component, onMounted, useRef } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
 
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\models\predict.py
-# -*- coding: utf-8 -*-
-import pickle
-import pandas as pd
-from pathlib import Path
-from dateutil.relativedelta import relativedelta
-from statsmodels.tsa.arima.model import ARIMA
+export class SaleMonthlyForecastChart extends Component {
+    setup() {
+        this.orm = useService("orm");
+        this.chartRef = useRef("chart");
 
-
-# path config
-base_dir = Path(__file__).resolve().parents[1]
-model_path = base_dir / "data" / "arima_model.pkl"
-
-
-# load trained model
-def load_model():
-    if not model_path.exists():
-        raise FileNotFoundError(
-            f"ARIMA model not found at {model_path}"
-        )
-
-    with open(model_path, "rb") as f:
-        model = pickle.load(f)
-
-    return model
-
-
-# forecast next months
-def forecast_next_month(monthly_sales):
-    """
-    monthly_sales : list of dict
-    [
-        {"month": "2023-01", "sales": 1200.0},
-        ...
-    ]
-    """
-
-    if not monthly_sales:
-        raise ValueError("No sales data available for forecasting.")
-
-    # convert to DataFrame
-    df = pd.DataFrame(monthly_sales)
-    df["month"] = pd.to_datetime(df["month"])
-    df = df.sort_values("month")
-
-    y = df["sales"].astype(float)
-
-    # Load model
-    trained_model = load_model()
-    order = trained_model.model.order
-
-    # fit
-    model = ARIMA(y, order=order)
-    fitted_model = model.fit()
-
-    # Forecast 1 step ahead
-    forecast_value = fitted_model.forecast(steps=1).iloc[0]
-
-    # next month
-    next_month = df["month"].iloc[-1] + relativedelta(months=1)
-
-    return {
-        "forecast_month": next_month.strftime("%B %Y"),
-        "forecast_sales": round(float(forecast_value), 2),
-        "model": f"ARIMA {order}",
+        onMounted(() => {
+            this.renderChart();
+        });
     }
+
+    async renderChart() {
+        const recordId = this.props.action.context.active_id;
+
+        const result = await this.orm.call(
+            "sale.monthly.forecast",
+            "get_forecast_chart_data", [recordId], {}
+        );
+
+        if (!result || !this.chartRef.el) {
+            return;
+        }
+
+        const ctx = this.chartRef.el.getContext("2d");
+
+        new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: result.labels,
+                datasets: [{
+                        label: "Actual Sales",
+                        data: result.actual,
+                        borderColor: "#1f77b4",
+                        backgroundColor: "rgba(31,119,180,0.2)",
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true,
+                    },
+                    {
+                        label: "Forecast Connection",
+                        data: result.connection,
+                        borderColor: "#b62728",
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: false,
+                        pointRadius: 0,
+                    },
+                    {
+                        label: "Forecast",
+                        data: result.forecast,
+                        borderColor: "#d62728",
+                        backgroundColor: "rgba(214,39,40,0.2)",
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 5,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: "top",
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                    },
+                },
+            },
+        });
+    }
+}
+
+SaleMonthlyForecastChart.template = "sale_monthly_forecast_chart_template";
+registry.category("actions").add(
+    "sale_monthly_forecast_chart",
+    SaleMonthlyForecastChart
+);
 
 C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\models\sales_monthly_forecast.py
 # -*- coding: utf-8 -*-
@@ -170,211 +185,21 @@ class SaleMonthlyForecast(models.Model):
         actual = list(monthly_totals.values())
 
         forecast = []
+        connection = []
+
         if record.forecast_month and record.forecast_sales:
             labels.append(record.forecast_month)
             actual.append(None)
             forecast = [None] * (len(actual)-1) + [record.forecast_sales]
+
+            last_actual = list(monthly_totals.values())[-1]
+            connection = [None] * (len(labels)-2) + [
+                last_actual,
+                record.forecast_sales
+            ]
 
         return {
             "labels": labels,
             "actual": actual,
             "forecast": forecast,
         }
-
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\security\ir.model.access.csv
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_sale_monthly_forecast,sale.monthly.forecast,model_sale_monthly_forecast,,1,1,1,0
-
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\js\sales_monthly_forecast_chart.js
-/** @odoo-module **/
-
-import { registry } from "@web/core/registry";
-import { Component, onMounted, useRef } from "@odoo/owl";
-import { useService } from "@web/core/utils/hooks";
-
-export class SaleMonthlyForecastChart extends Component {
-    setup() {
-        this.orm = useService("orm");
-        this.chartRef = useRef("chart");
-
-        onMounted(() => {
-            this.renderChart();
-        });
-    }
-
-    async renderChart() {
-        const recordId = this.props.action.context.active_id;
-
-        const result = await this.orm.call(
-            "sale.monthly.forecast",
-            "get_forecast_chart_data", [recordId], {}
-        );
-
-        if (!result || !this.chartRef.el) {
-            return;
-        }
-
-        const ctx = this.chartRef.el.getContext("2d");
-
-        new Chart(ctx, {
-            type: "line",
-            data: {
-                labels: result.labels,
-                datasets: [{
-                        label: "Actual Sales",
-                        data: result.actual,
-                        borderWidth: 2,
-                        tension: 0.3,
-                    },
-                    {
-                        label: "Forecast",
-                        data: result.forecast,
-                        borderDash: [5, 5],
-                        borderWidth: 2,
-                        tension: 0.3,
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: "top",
-                    },
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                    },
-                },
-            },
-        });
-    }
-}
-
-SaleMonthlyForecastChart.template = "sale_monthly_forecast_chart_template";
-registry.category("actions").add(
-    "sale_monthly_forecast_chart",
-    SaleMonthlyForecastChart
-);
-
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\xml\sales_monthly_forecast_chart.xml
-<?xml version="1.0" encoding="utf-8"?>
-<templates xml:space="preserve">
-    <t t-name="sale_monthly_forecast_chart_template">
-        <div class="o_form_view">
-            <h2>Monthly Sales Forecast</h2>
-            <canvas t-ref="chart" style="width:100%; height:400px;"/>
-        </div>
-    </t>
-</templates>
-
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sales_monthly_forecast_view.xml
-<?xml version="1.0" encoding="utf-8"?>
-<odoo>
-
-    <!-- form action -->
-    <record id="action_sales_monthly_forecast" model="ir.actions.act_window">
-        <field name="name">Monthly Sales Forecast</field>
-        <field name="res_model">sale.monthly.forecast</field>
-        <field name="view_mode">form</field>
-        <field name="target">current</field>
-    </record>
-
-    <!-- client action (chart) -->
-    <record id="action_sales_monthly_forecast_chart" model="ir.actions.client">
-        <field name="name">Monthly Sales Forecast Chart</field>
-        <field name="tag">sale_monthly_forecast_chart</field>
-    </record>
-
-    <!-- menu -->
-    <menuitem
-        id="menu_sale_monthly_forecast_root"
-        name="Sales Forecast"
-        parent="sale.sale_menu_root"
-        sequence="30"/>
-
-    <menuitem
-        id="menu_sale_monthly_forecast"
-        name="Monthly Forecast"
-        parent="menu_sale_monthly_forecast_root"
-        action="action_sales_monthly_forecast"
-        sequence="10"/>
-
-    <!-- forn view -->
-    <record id="view_sale_monthly_forecast_form" model="ir.ui.view">
-        <field name="name">sale.monthly.forecast.form</field>
-        <field name="model">sale.monthly.forecast</field>
-        <field name="arch" type="xml">
-
-            <form string="Monthly Sales Forecast">
-                <header>
-                    <!-- compute forecast -->
-                    <button
-                        name="action_compute_forecast"
-                        type="object"
-                        string="Compute Forecast"
-                        class="btn-primary"/>
-
-                    <!-- open chart -->
-                    <button
-                        name="%(action_sales_monthly_forecast_chart)d"
-                        type="action"
-                        string="View Chart"
-                        class="btn-secondary"/>
-                </header>
-
-                <sheet>
-                    <group>
-                        <field name="forecast_month" readonly="1"/>
-                        <field name="forecast_sales" readonly="1"/>
-                    </group>
-
-                    <group>
-                        <div class="o_form_label">
-                            Description:
-                        </div>
-                        <p>
-                            This forecast is generated using a trained ARIMA model
-                            based on historical monthly sales data.
-                        </p>
-                    </group>
-                </sheet>
-            </form>
-
-        </field>
-    </record>
-
-</odoo>
-
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\__init__.py
-from . import models
-
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\__manifest__.py
-# -*- coding: utf-8 -*-
-{
-    "name": "Monthly Sales Forecast",
-    "version": "18.0.1.0.0",
-    "category": "Sales",
-    "summary": "Forecast monthly sales using ARIMA",
-    "description": """
-        Forecast monthly sales one month ahead
-        using a trained ARIMA model and display
-        the result as a line chart.
-    """,
-    "author": "Thanchanok",
-    "depends": ["sale", "web"],
-    "data": [
-        "security/ir.model.access.csv",
-        "views/sales_monthly_forecast_view.xml",
-    ],
-    "assets": {
-        "web.assets_backend": [
-            "web/static/lib/Chart/Chart.js",
-            "sales_monthly_forecast/static/src/xml/sales_monthly_forecast_chart.xml",
-            "sales_monthly_forecast/static/src/js/sales_monthly_forecast_chart.js",
-        ],
-    },
-    "installable": True,
-    "application": False,
-}
