@@ -275,3 +275,9 @@ C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\__manifest__.py
     "installable": True,
     "application": False,
 }
+
+click .o_app[data-menu-xmlid='sale.sale_menu_root']
+5:1 Failed to fetch a worker script.Understand this error
+web.assets_web.min.js:10716 Error while loading "bus_service" SharedWorker, fallback on Worker.
+(anonymous) @ web.assets_web.min.js:10716Understand this warning
+web.assets_web.min.js:10716 Bus service failed to initialized.
