@@ -60,7 +60,7 @@ import {registry} from "@web/core/registry";
 
 export class SaleMonthlyForecastChart extends Component {
     static template = "sale_monthly_forecast.Chart";
-    static supportedTypes = ["chart"];
+    static supportedTypes = ["char"];
 
     setup() {
         this.orm = useService("orm");
@@ -263,7 +263,7 @@ C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\xml\sales_mon
 </templates>
 
 click .o_app[data-menu-xmlid='sale.sale_menu_root']
-:10018/odoo:1 Failed to fetch a worker script.Understand this error
+1:1 Failed to fetch a worker script.Understand this error
 web.assets_web.min.js:10716 Error while loading "bus_service" SharedWorker, fallback on Worker.
 (anonymous) @ web.assets_web.min.js:10716Understand this warning
 web.assets_web.min.js:10716 Bus service failed to initialized.
