@@ -204,3 +204,19 @@ class SaleMonthlyForecast(models.Model):
             "forecast": forecast,
             "connection": connection,
         }
+
+openInvoiceReport(label) {
+        // label = "December 2025"
+        const date = moment(label, "MMMM YYYY");
+
+        const start = date.startOf("month").format("YYYY-MM-DD");
+        const end = date.endOf("month").format("YYYY-MM-DD");
+
+        this.actionService.doAction({
+            type: "ir.actions.act_window",
+            name: `Invoice Report ${label}`,
+            res_model: "account.invoice.report",
+            view_mode: "tree,pivot,graph",
+            domain: [
+                ["invoice_date", ">=", start],
+                ["invoice_date", "<=", end],
