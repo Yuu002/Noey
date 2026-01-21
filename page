@@ -59,6 +59,9 @@ import {useService} from "@web/core/utils/hooks";
 import {registry} from "@web/core/registry";
 
 export class SaleMonthlyForecastChart extends Component {
+    static template = "sale_monthly_forecast.Chart";
+    static supportedTypes = ["chart"];
+
     setup() {
         this.orm = useService("orm");
 
@@ -70,12 +73,11 @@ export class SaleMonthlyForecastChart extends Component {
 
     async renderChart() {
         console.log("renderChart call");
-        this.el.innerHTML = "";
-
-        const canvas = document.createElement("canvas");
-        canvas.style.width = "100%";
-        canvas.style.height = "400px";
-        this.el.appendChild(canvas);
+        const canvas = this.el.querySelector("canvas");
+        if(!canvas) {
+            console.warn("canvas not found");
+            return;
+        }
 
         const result = await this.orm.call(
             "sale.monthly.forecast",
@@ -83,9 +85,11 @@ export class SaleMonthlyForecastChart extends Component {
             [],
             {}
         );
+
         console.log("chart data:", result);
 
         if (!result || !result.labels) {
+            console.warn("no chart data")
             return;
         }
 
@@ -247,37 +251,21 @@ class SaleMonthlyForecast(models.Model):
             "forecast": forecast,
         }
 
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\__manifest__.py
-# -*- coding: utf-8 -*-
-{
-    "name": "Monthly Sales Forecast",
-    "version": "18.0.1.0.0",
-    "category": "Sales",
-    "summary": "Forecast monthly sales using ARIMA",
-    "description": """
-        Forecast monthly sales one month ahead
-        using a trained ARIMA model and display
-        the result as a line chart.
-    """,
-    "author": "Thanchanok",
-    "depends": ["sale", "web"],
-    "data": [
-        "security/ir.model.access.csv",
-        "views/sales_monthly_forecast_view.xml",
-    ],
-    "assets": {
-        "web.assets_backend": [
-            "web/static/lib/Chart/Chart.js",
-            "sales_monthly_forecast/static/src/xml/sales_monthly_forecast_chart.xml",
-            "sales_monthly_forecast/static/src/js/sales_monthly_forecast_chart.js",
-        ],
-    },
-    "installable": True,
-    "application": False,
-}
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\xml\sales_monthly_forecast_chart.xml
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="sale_monthly_forecast.Chart">
+        <div style="width:100%; height:420px;">
+            <canvas style="width:100%; height:400px;"/>
+        </div>
+    </t>
+</templates>
 
 click .o_app[data-menu-xmlid='sale.sale_menu_root']
-5:1 Failed to fetch a worker script.Understand this error
+:10018/odoo:1 Failed to fetch a worker script.Understand this error
 web.assets_web.min.js:10716 Error while loading "bus_service" SharedWorker, fallback on Worker.
 (anonymous) @ web.assets_web.min.js:10716Understand this warning
 web.assets_web.min.js:10716 Bus service failed to initialized.
+(anonymous) @ web.assets_web.min.js:10716Understand this warning
+web.assets_web.min.js:7741 Missing widget: sale_monthly_forecast_chart for field of type char
