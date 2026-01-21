@@ -1,19 +1,18 @@
 Odoo Client Error
 
-UncaughtClientError > ReferenceError
-Uncaught Javascript Error > moment is not defined
+UncaughtPromiseError > KeyNotFoundError
+Uncaught Promise > Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
 
-Occured on localhost:10018 on 2026-01-21 10:40:59 GMT
+Occured on localhost:10018 on 2026-01-21 10:53:03 GMT
 
-ReferenceError: moment is not defined
-    at SaleMonthlyForecastChart.openInvoiceReport (http://localhost:10018/web/assets/7acd91f/web.assets_web.min.js:23985:37)
-    at Chart.onClick (http://localhost:10018/web/assets/7acd91f/web.assets_web.min.js:23984:790)
-    at callback (http://localhost:10018/web/assets/7acd91f/web.assets_web.min.js:21812:325)
-    at Chart._handleEvent (http://localhost:10018/web/assets/7acd91f/web.assets_web.min.js:22856:389)
-    at Chart._eventHandler (http://localhost:10018/web/assets/7acd91f/web.assets_web.min.js:22854:20)
-    at listener (http://localhost:10018/web/assets/7acd91f/web.assets_web.min.js:22840:235)
-    at Chart.<anonymous> (http://localhost:10018/web/assets/7acd91f/web.assets_web.min.js:22289:131)
-    at http://localhost:10018/web/assets/7acd91f/web.assets_web.min.js:21879:224
+KeyNotFoundError: Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
+    Error: Cannot find key "sale_monthly_forecast_chart" in the "actions" registry
+        at Registry.get (http://localhost:10018/web/assets/a45c1f8/web.assets_web.min.js:3695:76)
+        at _executeClientAction (http://localhost:10018/web/assets/a45c1f8/web.assets_web.min.js:10093:87)
+        at doAction (http://localhost:10018/web/assets/a45c1f8/web.assets_web.min.js:10110:192)
+        at async Object.doActionButton (http://localhost:10018/web/assets/a45c1f8/web.assets_web.min.js:10121:249)
+        at async execute (http://localhost:10018/web/assets/a45c1f8/web.assets_web.min.js:9720:301)
+        at async executeButtonCallback (http://localhost:10018/web/assets/a45c1f8/web.assets_web.min.js:9713:34)
 
 C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\js\sales_monthly_forecast_chart.js
 /** @odoo-module **/
@@ -21,6 +20,7 @@ C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\js\sales_mont
 import {registry} from "@web/core/registry";
 import {Component, onMounted, useRef} from "@odoo/owl";
 import {useService} from "@web/core/utils/hooks";
+import {DateTime} from "luxon"
 
 export class SaleMonthlyForecastChart extends Component {
     setup() {
@@ -129,10 +129,15 @@ export class SaleMonthlyForecastChart extends Component {
     }
 
     openInvoiceReport(label) {
-        const date = moment(label, "MMMM YYYY");
+        const date = moment(label, "MMMM YYYY", {locale: "en"});
 
-        const start = date.startOf("month").format("YYYY-MM-DD");
-        const end = date.endOf("month").format("YYYY-MM-DD");
+        if(!date.isValid) {
+            console.error("Invalid date label:", label);
+            return;
+        }
+
+        const start = date.startOf("month").toISODate();
+        const end = date.endOf("month").toISODate();
 
         this.actionService.doAction({
             type: "ir.actions.act_window",
