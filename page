@@ -121,13 +121,121 @@ registry.category("view_widgets").add(
     SaleMonthlyForecastChart
 );
 
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\xml\sales_monthly_forecast_chart.xml
-<?xml version="1.0" encoding="utf-8"?>
-<templates xml:space="preserve">
-    <t t-name="sale_monthly_forecast_chart_template">
-        <div class="o_form_view">
-            <h2>Monthly Sales Forecast</h2>
-            <canvas t-ref="chart" style="width:100%; height:400px;"/>
-        </div>
-    </t>
-</templates>
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\models\sales_monthly_forecast.py
+# -*- coding: utf-8 -*-
+
+from odoo import models, fields, api
+from odoo.exceptions import UserError
+from collections import defaultdict
+from datetime import datetime
+from .predict import forecast_next_month
+
+class SaleMonthlyForecast(models.Model):
+    _name = "sale.monthly.forecast"
+    _description = "Monthly Sales Forecast (ARIMA)"
+    _rec_name = "name"
+
+    name = fields.Char(
+        string="Name",
+        default="Monthly Sales Forecast",
+        readonly=True
+    )
+
+    forecast_month = fields.Char(
+        string="Forecast Month",
+        readonly=True
+    )
+
+    forecast_sales = fields.Float(
+        string="Forecast Sales",
+        readonly=True
+    )
+
+    # Compute Forecast
+    def action_compute_forecast(self):
+
+        orders = self.env["sale.order"].search([
+            ("state", "in", ["sale", "done"]),
+            ("date_order", "!=", False)
+        ], order="date_order ASC")
+
+        if not orders:
+            raise UserError("No confirmed sales orders found.")
+
+        monthly_totals = defaultdict(float)
+
+        for order in orders:
+            order_date = fields.Datetime.to_datetime(order.date_order)
+            month_key = order_date.strftime("%Y-%m")
+            monthly_totals[month_key] += order.amount_total
+
+        monthly_sales = [
+            {"month": month, "sales": monthly_totals[month]}
+            for month in sorted(monthly_totals.keys())
+        ]
+
+        try:
+            result = forecast_next_month(monthly_sales)
+        except Exception as e:
+            raise UserError(str(e))
+
+        self.write({
+            "forecast_month": result["forecast_month"],
+            "forecast_sales": result["forecast_sales"],
+        })
+
+        return True
+
+    # STEP 1: ดึงยอดขายจริง (Actual Sales อย่างเดียว)
+    @api.model
+    def get_actual_sales_chart_data(self):
+
+        orders = self.env["sale.order"].search([
+            ("state", "in", ["sale", "done"]),
+            ("date_order", "!=", False)
+        ], order="date_order ASC")
+
+        monthly_totals = defaultdict(float)
+
+        for order in orders:
+            order_date = fields.Datetime.to_datetime(order.date_order)
+            month_key = order_date.strftime("%B %Y")
+            monthly_totals[month_key] += order.amount_total
+
+        return {
+            "labels": list(monthly_totals.keys()),
+            "actual": list(monthly_totals.values()),
+        }
+
+    @api.model
+    def get_forecast_chart_data(self, record_id):
+        record = self.browse(record_id)
+        if not record.exists():
+            return {}
+
+        orders = self.env["sale.order"].search([
+            ("state", "in", ["sale", "done"]),
+            ("date_order", "!=", False)
+        ], order="date_order ASC")
+
+        monthly_totals = defaultdict(float)
+
+        for order in orders:
+            order_date = fields.Datetime.to_datetime(order.date_order)
+            month_key = order_date.strftime("%B %Y")
+            monthly_totals[month_key] += order.amount_total
+
+        labels = list(monthly_totals.keys())
+        actual = list(monthly_totals.values())
+
+        forecast = []
+        if record.forecast_month and record.forecast_sales:
+            labels.append(record.forecast_month)
+            actual.append(None)
+            forecast = [None] * (len(actual)-1) + [record.forecast_sales]
+
+        return {
+            "labels": labels,
+            "actual": actual,
+            "forecast": forecast,
+        }
