@@ -1,13 +1,14 @@
 C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\js\sales_monthly_forecast_chart.js
 /** @odoo-module **/
 
-import { registry } from "@web/core/registry";
-import { Component, onMounted, useRef } from "@odoo/owl";
-import { useService } from "@web/core/utils/hooks";
+import {registry} from "@web/core/registry";
+import {Component, onMounted, useRef} from "@odoo/owl";
+import {useService} from "@web/core/utils/hooks";
 
 export class SaleMonthlyForecastChart extends Component {
     setup() {
         this.orm = useService("orm");
+        this.actionService = useService("action");
         this.chartRef = useRef("chart");
 
         onMounted(() => {
@@ -23,7 +24,7 @@ export class SaleMonthlyForecastChart extends Component {
             "get_forecast_chart_data", [recordId], {}
         );
 
-        if (!result || !this.chartRef.el) {
+        if(!result || !this.chartRef.el) {
             return;
         }
 
@@ -36,13 +37,14 @@ export class SaleMonthlyForecastChart extends Component {
                 datasets: [{
                         label: "Actual Sales",
                         data: result.actual,
-                        borderColor: "#1f77b4",
+                        borderColor: "#469fdf",
                         backgroundColor: "rgba(31,119,180,0.2)",
                         borderWidth: 2,
                         tension: 0.3,
                         fill: true,
                     },
                     {
+                        label: "connection",
                         data: result.connection,
                         borderColor: "#df6666",
                         backgroundColor: "rgba(255, 126, 126, 0.23)",
@@ -66,9 +68,27 @@ export class SaleMonthlyForecastChart extends Component {
             },
             options: {
                 responsive: true,
+
+                onClick: (evt, elements) => {
+                    if(!elements.legend) return;
+
+                    const element = elements[0];
+                    if(element.datasetsIndex !==0) return;
+
+                    const index = element.index;
+                    const label = result.labels[index];
+
+                    this.openInvoiceReport(label);
+                },
+
                 plugins: {
                     legend: {
                         position: "top",
+                        labels: {
+                            filter: function(item) {
+                                return item.text !== "connection";
+                            }
+                        }
                     },
                 },
                 scales: {
@@ -79,134 +99,8 @@ export class SaleMonthlyForecastChart extends Component {
             },
         });
     }
-}
 
-SaleMonthlyForecastChart.template = "sale_monthly_forecast_chart_template";
-registry.category("actions").add(
-    "sale_monthly_forecast_chart",
-    SaleMonthlyForecastChart
-);
-
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\models\sales_monthly_forecast.py
-# -*- coding: utf-8 -*-
-
-from odoo import models, fields, api
-from odoo.exceptions import UserError
-from collections import defaultdict
-from datetime import datetime
-from .predict import forecast_next_month
-
-class SaleMonthlyForecast(models.Model):
-    _name = "sale.monthly.forecast"
-    _description = "Monthly Sales Forecast (ARIMA)"
-    _rec_name = "name"
-
-    name = fields.Char(
-        string="Name",
-        default="Monthly Sales Forecast",
-        readonly=True
-    )
-
-    forecast_month = fields.Char(
-        string="Forecast Month",
-        readonly=True
-    )
-
-    forecast_sales = fields.Float(
-        string="Forecast Sales",
-        readonly=True
-    )
-
-    # core method
-    def action_compute_forecast(self):
-        """
-        1) Pull sale.order from Odoo
-        2) Aggregate sales by month
-        3) Call predict.py
-        4) Save forecast result
-        """
-
-        # 1) fetch confirmed sales orders
-        orders = self.env["sale.order"].search([
-            ("state", "in", ["sale", "done"]),
-            ("date_order", "!=", False)
-        ], order="date_order ASC")
-
-        if not orders:
-            raise UserError("No confirmed sales orders found.")
-
-        # 2) aggregate monthly sales
-        monthly_totals = defaultdict(float)
-
-        for order in orders:
-            order_date = fields.Datetime.to_datetime(order.date_order)
-            month_key = order_date.strftime("%Y-%m")
-            monthly_totals[month_key] += order.amount_total
-
-        monthly_sales = [
-            {"month": month, "sales": monthly_totals[month]}
-            for month in sorted(monthly_totals.keys())
-        ]
-
-        # 3) call forecast function
-        try:
-            result = forecast_next_month(monthly_sales)
-        except Exception as e:
-            raise UserError(str(e))
-
-        # 4) save result to record
-        self.write({
-            "forecast_month": result["forecast_month"],
-            "forecast_sales": result["forecast_sales"],
-        })
-
-        return True
-
-    # data for chart (used by js)
-    @api.model
-    def get_forecast_chart_data(self, record_id):
-        record = self.browse(record_id)
-        if not record.exists():
-            return {}
-
-        orders = self.env["sale.order"].search([
-            ("state", "in", ["sale", "done"]),
-            ("date_order", "!=", False)
-        ], order="date_order ASC")
-
-        monthly_totals = defaultdict(float)
-
-        for order in orders:
-            order_date = fields.Datetime.to_datetime(order.date_order)
-            month_key = order_date.strftime("%B %Y")
-            monthly_totals[month_key] += order.amount_total
-
-        labels = list(monthly_totals.keys())
-        actual = list(monthly_totals.values())
-
-        forecast = []
-        connection = []
-
-        if record.forecast_month and record.forecast_sales:
-            labels.append(record.forecast_month)
-            actual.append(None)
-            forecast = [None] * (len(actual)-1) + [record.forecast_sales]
-
-            last_actual = list(monthly_totals.values())[-1]
-            connection = [None] * (len(labels)-2) + [
-                last_actual,
-                record.forecast_sales
-            ]
-
-        return {
-            "labels": labels,
-            "actual": actual,
-            "forecast": forecast,
-            "connection": connection,
-        }
-
-openInvoiceReport(label) {
-        // label = "December 2025"
+    openInvoiceReport(label) {
         const date = moment(label, "MMMM YYYY");
 
         const start = date.startOf("month").format("YYYY-MM-DD");
@@ -220,3 +114,13 @@ openInvoiceReport(label) {
             domain: [
                 ["invoice_date", ">=", start],
                 ["invoice_date", "<=", end],
+            ],
+        });
+    }
+}
+
+SaleMonthlyForecastChart.template = "sale_monthly_forecast_chart_template";
+registry.category("actions").add(
+    "sale_monthly_forecast_chart",
+    SaleMonthlyForecastChart
+);
