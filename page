@@ -1,234 +1,78 @@
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\data
-มีไฟล์ model arima.pkl ไม่ต้องยุ่ง
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sales_monthly_forecast_view.xml
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
 
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\models\__init__.py
-from . import sales_monthly_forecast
-from . import predict
+    <record id="view_sale_monthly_forecast_form" model="ir.ui.view">
+        <field name="name">sale.monthly.forecast.form</field>
+        <field name="model">sale.monthly.forecast</field>
+        <field name="arch" type="xml">
+            <form string="Monthly Sales Forecast">
+                <sheet>
 
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\models\predict.py
-# -*- coding: utf-8 -*-
-import pickle
-import pandas as pd
-from pathlib import Path
-from dateutil.relativedelta import relativedelta
-from statsmodels.tsa.arima.model import ARIMA
+                    <header>
+                        <button
+                            string="Compute Forecast"
+                            name="action_compute_forecast"
+                            type="object"
+                            class="btn-primary"
+                        />
+                    </header>
 
+                        <group>
+                            <div class="oe_title">
+                                <h2>Monthly Sales Trend</h2>
+                            </div>
 
-# path config
-base_dir = Path(__file__).resolve().parents[1]
-model_path = base_dir / "data" / "arima_model.pkl"
+                            <div widget="sale_monthly_forecast_chart"
+                                style="width:100%; min-height:420px;"/>
+                        </group>
 
+                </sheet>
+            </form>
+        </field>
+    </record>
 
-# load trained model
-def load_model():
-    if not model_path.exists():
-        raise FileNotFoundError(
-            f"ARIMA model not found at {model_path}"
-        )
+    <record id="action_sale_monthly_forecast" model="ir.actions.act_window">
+        <field name="name">Sales Forecast</field>
+        <field name="res_model">sale.monthly.forecast</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+    </record>
 
-    with open(model_path, "rb") as f:
-        model = pickle.load(f)
+    <menuitem
+        id="menu_sale_monthly_forecast"
+        name="Sales Forecast"
+        action="action_sale_monthly_forecast"
+        parent="sale.sale_menu_root"
+        sequence="50"
+    />
 
-    return model
-
-
-# forecast next months
-def forecast_next_month(monthly_sales):
-    """
-    monthly_sales : list of dict
-    [
-        {"month": "2023-01", "sales": 1200.0},
-        ...
-    ]
-    """
-
-    if not monthly_sales:
-        raise ValueError("No sales data available for forecasting.")
-
-    # convert to DataFrame
-    df = pd.DataFrame(monthly_sales)
-    df["month"] = pd.to_datetime(df["month"])
-    df = df.sort_values("month")
-
-    y = df["sales"].astype(float)
-
-    # Load model
-    trained_model = load_model()
-    order = trained_model.model.order
-
-    # fit
-    model = ARIMA(y, order=order)
-    fitted_model = model.fit()
-
-    # Forecast 1 step ahead
-    forecast_value = fitted_model.forecast(steps=1).iloc[0]
-
-    # next month
-    next_month = df["month"].iloc[-1] + relativedelta(months=1)
-
-    return {
-        "forecast_month": next_month.strftime("%B %Y"),
-        "forecast_sales": round(float(forecast_value), 2),
-        "model": f"ARIMA {order}",
-    }
-
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\models\sales_monthly_forecast.py
-# -*- coding: utf-8 -*-
-
-from odoo import models, fields, api
-from odoo.exceptions import UserError
-from collections import defaultdict
-from datetime import datetime
-from .predict import forecast_next_month
-
-class SaleMonthlyForecast(models.Model):
-    _name = "sale.monthly.forecast"
-    _description = "Monthly Sales Forecast (ARIMA)"
-    _rec_name = "name"
-
-    name = fields.Char(
-        string="Name",
-        default="Monthly Sales Forecast",
-        readonly=True
-    )
-
-    forecast_month = fields.Char(
-        string="Forecast Month",
-        readonly=True
-    )
-
-    forecast_sales = fields.Float(
-        string="Forecast Sales",
-        readonly=True
-    )
-
-    # ===============================
-    # Compute Forecast (เหมือนเดิม)
-    # ===============================
-    def action_compute_forecast(self):
-
-        orders = self.env["sale.order"].search([
-            ("state", "in", ["sale", "done"]),
-            ("date_order", "!=", False)
-        ], order="date_order ASC")
-
-        if not orders:
-            raise UserError("No confirmed sales orders found.")
-
-        monthly_totals = defaultdict(float)
-
-        for order in orders:
-            order_date = fields.Datetime.to_datetime(order.date_order)
-            month_key = order_date.strftime("%Y-%m")
-            monthly_totals[month_key] += order.amount_total
-
-        monthly_sales = [
-            {"month": month, "sales": monthly_totals[month]}
-            for month in sorted(monthly_totals.keys())
-        ]
-
-        try:
-            result = forecast_next_month(monthly_sales)
-        except Exception as e:
-            raise UserError(str(e))
-
-        self.write({
-            "forecast_month": result["forecast_month"],
-            "forecast_sales": result["forecast_sales"],
-        })
-
-        return True
-
-    # =====================================================
-    # STEP 1: ดึงยอดขายจริง (Actual Sales อย่างเดียว)
-    # =====================================================
-    @api.model
-    def get_actual_sales_chart_data(self):
-        # เปลี่ยน: method ใหม่ สำหรับ STEP 1
-
-        orders = self.env["sale.order"].search([
-            ("state", "in", ["sale", "done"]),
-            ("date_order", "!=", False)
-        ], order="date_order ASC")
-
-        monthly_totals = defaultdict(float)
-
-        for order in orders:
-            order_date = fields.Datetime.to_datetime(order.date_order)
-            month_key = order_date.strftime("%B %Y")
-            monthly_totals[month_key] += order.amount_total
-
-        return {
-            "labels": list(monthly_totals.keys()),
-            "actual": list(monthly_totals.values()),
-        }
-
-    # =====================================================
-    # (ของเก่า) ยังไม่ลบ – เอาไว้ STEP 2
-    # =====================================================
-    @api.model
-    def get_forecast_chart_data(self, record_id):
-        record = self.browse(record_id)
-        if not record.exists():
-            return {}
-
-        orders = self.env["sale.order"].search([
-            ("state", "in", ["sale", "done"]),
-            ("date_order", "!=", False)
-        ], order="date_order ASC")
-
-        monthly_totals = defaultdict(float)
-
-        for order in orders:
-            order_date = fields.Datetime.to_datetime(order.date_order)
-            month_key = order_date.strftime("%B %Y")
-            monthly_totals[month_key] += order.amount_total
-
-        labels = list(monthly_totals.keys())
-        actual = list(monthly_totals.values())
-
-        forecast = []
-        if record.forecast_month and record.forecast_sales:
-            labels.append(record.forecast_month)
-            actual.append(None)
-            forecast = [None] * (len(actual)-1) + [record.forecast_sales]
-
-        return {
-            "labels": labels,
-            "actual": actual,
-            "forecast": forecast,
-        }
-
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\security\ir.model.access.csv
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_sale_monthly_forecast,sale.monthly.forecast,model_sale_monthly_forecast,,1,1,1,0
+</odoo>
 
 C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\js\sales_monthly_forecast_chart.js
 /** @odoo-module **/
 
-import { Component, onMounted } from "@odoo/owl";
-import { useService } from "@web/core/utils/hooks";
+import {Component, onMounted} from "@odoo/owl";
+import {useService} from "@web/core/utils/hooks";
+import {registry} from "@web/core/registry";
 
 export class SaleMonthlyForecastChart extends Component {
     setup() {
         this.orm = useService("orm");
 
         onMounted(() => {
-            this.renderActualChart(); // เปลี่ยน: วาดกราฟทันที
+            this.renderChart();
         });
     }
 
-    async renderActualChart() {
-        // เปลี่ยน: หา canvas จาก DOM โดยตรง
-        const canvas = document.querySelector(
-            ".o_sale_monthly_forecast_chart"
-        );
+    async renderChart() {
+        this.el.innerHTML = "";
 
-        if (!canvas) {
-            return;
-        }
+        const canvas = document.createElement("canvas");
+        canvas.style.width = "100%";
+        canvas.style.height = "400px";
+        this.el.appendChild(canvas);
 
-        // เปลี่ยน: เรียก method สำหรับ Actual อย่างเดียว
         const result = await this.orm.call(
             "sale.monthly.forecast",
             "get_actual_sales_chart_data",
@@ -236,10 +80,13 @@ export class SaleMonthlyForecastChart extends Component {
             {}
         );
 
+        if (!result || !result.labels) {
+            return;
+        }
+
         const ctx = canvas.getContext("2d");
 
-        // เปลี่ยน: วาดเฉพาะเส้นฟ้า
-        this.chart = new Chart(ctx, {
+        new Chart(ctx, {
             type: "line",
             data: {
                 labels: result.labels,
@@ -269,6 +116,11 @@ export class SaleMonthlyForecastChart extends Component {
     }
 }
 
+registry.category("view_widgets").add(
+    "sale_monthly_forecast_chart",
+    SaleMonthlyForecastChart
+);
+
 C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\xml\sales_monthly_forecast_chart.xml
 <?xml version="1.0" encoding="utf-8"?>
 <templates xml:space="preserve">
@@ -279,108 +131,3 @@ C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\xml\sales_mon
         </div>
     </t>
 </templates>
-
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\__init__.py
-from . import models
-
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\__manifest__.py
-# -*- coding: utf-8 -*-
-{
-    "name": "Monthly Sales Forecast",
-    "version": "18.0.1.0.0",
-    "category": "Sales",
-    "summary": "Forecast monthly sales using ARIMA",
-    "description": """
-        Forecast monthly sales one month ahead
-        using a trained ARIMA model and display
-        the result as a line chart.
-    """,
-    "author": "Thanchanok",
-    "depends": ["sale", "web"],
-    "data": [
-        "security/ir.model.access.csv",
-        "views/sales_monthly_forecast_view.xml",
-    ],
-    "assets": {
-        "web.assets_backend": [
-            "web/static/lib/Chart/Chart.js",
-            "sales_monthly_forecast/static/src/xml/sales_monthly_forecast_chart.xml",
-            "sales_monthly_forecast/static/src/js/sales_monthly_forecast_chart.js",
-        ],
-    },
-    "installable": True,
-    "application": False,
-}
-
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sales_monthly_forecast_view.xml
-<?xml version="1.0" encoding="utf-8"?>
-<odoo>
-
-    <!-- ===============================
-         Form View
-         =============================== -->
-    <record id="view_sale_monthly_forecast_form" model="ir.ui.view">
-        <field name="name">sale.monthly.forecast.form</field>
-        <field name="model">sale.monthly.forecast</field>
-        <field name="arch" type="xml">
-            <form string="Monthly Sales Forecast">
-
-                <header>
-                    <button
-                        string="Compute Forecast"
-                        name="action_compute_forecast"
-                        type="object"
-                        class="btn-primary"
-                    />
-                </header>
-
-                <sheet>
-
-                    <group>
-                        <field name="forecast_month" readonly="1"/>
-                        <field name="forecast_sales" readonly="1"/>
-                    </group>
-
-                    <separator string="Monthly Sales Chart"/>
-
-                    <div class="o_sale_monthly_forecast_chart_container"
-                         style="width:100%; padding:16px;">
-
-                        <canvas
-                            class="o_sale_monthly_forecast_chart"
-                            style="width:100%; height:400px;"
-                        />
-                    </div>
-
-                </sheet>
-            </form>
-        </field>
-    </record>
-
-    <!-- ===============================
-         Action
-         =============================== -->
-    <record id="action_sale_monthly_forecast" model="ir.actions.act_window">
-        <field name="name">Sales Forecast</field>
-        <field name="res_model">sale.monthly.forecast</field>
-        <field name="view_mode">form</field>
-        <field name="target">current</field>
-    </record>
-
-    <!-- ===============================
-         Menu
-         =============================== -->
-    <menuitem
-        id="menu_sale_monthly_forecast"
-        name="Sales Forecast"
-        action="action_sale_monthly_forecast"
-        parent="sale.sale_menu_root"
-        sequence="50"
-    />
-
-</odoo>
-
-3:1 Failed to fetch a worker script.Understand this error
-web.assets_web.min.js:10716 Error while loading "bus_service" SharedWorker, fallback on Worker.
-(anonymous) @ web.assets_web.min.js:10716Understand this warning
-web.assets_web.min.js:10716 Bus service failed to initialized.
