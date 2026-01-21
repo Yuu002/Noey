@@ -247,7 +247,31 @@ class SaleMonthlyForecast(models.Model):
             "forecast": forecast,
         }
 
-Failed to fetch a worker script.Understand this error
-web.assets_web.min.js:10716 Error while loading "bus_service" SharedWorker, fallback on Worker.
-(anonymous) @ web.assets_web.min.js:10716Understand this warning
-web.assets_web.min.js:10716 Bus service failed to initialized.
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\__manifest__.py
+# -*- coding: utf-8 -*-
+{
+    "name": "Monthly Sales Forecast",
+    "version": "18.0.1.0.0",
+    "category": "Sales",
+    "summary": "Forecast monthly sales using ARIMA",
+    "description": """
+        Forecast monthly sales one month ahead
+        using a trained ARIMA model and display
+        the result as a line chart.
+    """,
+    "author": "Thanchanok",
+    "depends": ["sale", "web"],
+    "data": [
+        "security/ir.model.access.csv",
+        "views/sales_monthly_forecast_view.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "web/static/lib/Chart/Chart.js",
+            "sales_monthly_forecast/static/src/xml/sales_monthly_forecast_chart.xml",
+            "sales_monthly_forecast/static/src/js/sales_monthly_forecast_chart.js",
+        ],
+    },
+    "installable": True,
+    "application": False,
+}
