@@ -182,6 +182,11 @@ C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\__manifest__.py
             "sales_monthly_forecast/static/src/xml/sales_monthly_forecast_chart.xml",
             "sales_monthly_forecast/static/src/js/sales_monthly_forecast_chart.js",
             "sales_monthly_forecast/static/src/css/sale_monthly_forecast.css",
+        ],
+    },
+    "installable": True,
+    "application": False,
+}
 
 C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\xml\sales_monthly_forecast_chart.xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -272,8 +277,3 @@ C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sales_monthly_fore
     </record>
 
 </odoo>
-        ],
-    },
-    "installable": True,
-    "application": False,
-}
