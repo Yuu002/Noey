@@ -3,14 +3,14 @@ Odoo Client Error
 UncaughtPromiseError > TypeError
 Uncaught Promise > clientAction is not a function
 
-Occured on localhost:10018 on 2026-01-22 04:31:30 GMT
+Occured on localhost:10018 on 2026-01-22 04:34:17 GMT
 
 TypeError: clientAction is not a function
-    at _executeClientAction (http://localhost:10018/web/assets/65b9d8a/web.assets_web.min.js:10095:234)
-    at doAction (http://localhost:10018/web/assets/65b9d8a/web.assets_web.min.js:10110:192)
-    at async Object.doActionButton (http://localhost:10018/web/assets/65b9d8a/web.assets_web.min.js:10121:249)
-    at async execute (http://localhost:10018/web/assets/65b9d8a/web.assets_web.min.js:9720:301)
-    at async executeButtonCallback (http://localhost:10018/web/assets/65b9d8a/web.assets_web.min.js:9713:34)
+    at _executeClientAction (http://localhost:10018/web/assets/686992f/web.assets_web.min.js:10095:234)
+    at doAction (http://localhost:10018/web/assets/686992f/web.assets_web.min.js:10110:192)
+    at async Object.doActionButton (http://localhost:10018/web/assets/686992f/web.assets_web.min.js:10121:249)
+    at async execute (http://localhost:10018/web/assets/686992f/web.assets_web.min.js:9720:301)
+    at async executeButtonCallback (http://localhost:10018/web/assets/686992f/web.assets_web.min.js:9713:34)
 
 C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\js\sales_monthly_forecast_chart.js
 /** @odoo-module **/
