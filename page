@@ -105,3 +105,15 @@ C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sales_monthly_fore
     </record>
 
 </odoo>
+
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\xml\sales_monthly_forecast_chart.xml
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+    <t t-name="sale_monthly_forecast_chart_template">
+        <div class="smf-container">
+            <h2 class="smf-title">Monthly Sales Forecast</h2>
+            <div class="smf-divider"></div>
+            <canvas t-ref="chart" style="width:100%; height:400px;"/>
+        </div>
+    </t>
+</templates>
