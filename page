@@ -1,16 +1,15 @@
 Odoo Client Error
 
-UncaughtPromiseError > TypeError
-Uncaught Promise > clientAction is not a function
+UncaughtPromiseError
+Uncaught Promise > The ActionManager service can't handle actions of type undefined
 
-Occured on localhost:10018 on 2026-01-22 03:49:39 GMT
+Occured on localhost:10018 on 2026-01-22 04:03:07 GMT
 
-TypeError: clientAction is not a function
-    at _executeClientAction (http://localhost:10018/web/assets/812896e/web.assets_web.min.js:10095:234)
-    at doAction (http://localhost:10018/web/assets/812896e/web.assets_web.min.js:10110:192)
-    at async Object.doActionButton (http://localhost:10018/web/assets/812896e/web.assets_web.min.js:10121:249)
-    at async execute (http://localhost:10018/web/assets/812896e/web.assets_web.min.js:9720:301)
-    at async executeButtonCallback (http://localhost:10018/web/assets/812896e/web.assets_web.min.js:9713:34)
+Error: The ActionManager service can't handle actions of type undefined
+    at doAction (http://localhost:10018/web/assets/8b53fe5/web.assets_web.min.js:10111:7)
+    at async Object.doActionButton (http://localhost:10018/web/assets/8b53fe5/web.assets_web.min.js:10121:249)
+    at async execute (http://localhost:10018/web/assets/8b53fe5/web.assets_web.min.js:9720:301)
+    at async executeButtonCallback (http://localhost:10018/web/assets/8b53fe5/web.assets_web.min.js:9713:34)
 
 C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\js\sales_monthly_forecast_chart.js
 /** @odoo-module **/
@@ -153,7 +152,12 @@ export class SaleMonthlyForecastChart extends Component {
 SaleMonthlyForecastChart.template = "sale_monthly_forecast_chart_template";
 registry.category("actions").add(
     "sale_monthly_forecast_chart",
-    {component: SaleMonthlyForecastChart}
+    (env, action) => {
+        return {
+            Component: SaleMonthlyForecastChart,
+        props: {action},
+        };
+    }
 );
 
 C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\__manifest__.py
