@@ -182,6 +182,96 @@ C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\__manifest__.py
             "sales_monthly_forecast/static/src/xml/sales_monthly_forecast_chart.xml",
             "sales_monthly_forecast/static/src/js/sales_monthly_forecast_chart.js",
             "sales_monthly_forecast/static/src/css/sale_monthly_forecast.css",
+
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\xml\sales_monthly_forecast_chart.xml
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+    <t t-name="sale_monthly_forecast_chart_template">
+        <div class="smf-container">
+            <h2 class="smf-title">Monthly Sales Forecast</h2>
+            <div class="smf-divider"></div>
+            <canvas t-ref="chart" style="width:100%; height:400px;"/>
+        </div>
+    </t>
+</templates>
+
+C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sales_monthly_forecast_view.xml
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- form action -->
+    <record id="action_sales_monthly_forecast" model="ir.actions.act_window">
+        <field name="name">Monthly Sales Forecast</field>
+        <field name="res_model">sale.monthly.forecast</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+    </record>
+
+    <!-- client action (chart) -->
+    <record id="action_sales_monthly_forecast_chart" model="ir.actions.client">
+        <field name="name">Monthly Sales Forecast Chart</field>
+        <field name="tag">sale_monthly_forecast_chart</field>
+    </record>
+
+    <!-- menu -->
+    <menuitem
+        id="menu_sale_monthly_forecast_root"
+        name="Sales Forecast"
+        parent="sale.sale_menu_root"
+        sequence="30"/>
+
+    <menuitem
+        id="menu_sale_monthly_forecast"
+        name="Monthly Forecast"
+        parent="menu_sale_monthly_forecast_root"
+        action="action_sales_monthly_forecast"
+        sequence="10"/>
+
+    <!-- forn view -->
+    <record id="view_sale_monthly_forecast_form" model="ir.ui.view">
+        <field name="name">sale.monthly.forecast.form</field>
+        <field name="model">sale.monthly.forecast</field>
+        <field name="arch" type="xml">
+
+            <form string="Monthly Sales Forecast">
+                <header>
+                    <!-- compute forecast -->
+                    <button
+                        name="action_compute_forecast"
+                        type="object"
+                        string="Compute Forecast"
+                        class="btn-primary"/>
+
+                    <!-- open chart -->
+                    <button
+                        name="%(action_sales_monthly_forecast_chart)d"
+                        type="action"
+                        string="View Chart"
+                        class="btn-secondary"/>
+                </header>
+
+                <sheet>
+                    <group>
+                        <field name="forecast_month" readonly="1"/>
+                        <field name="forecast_sales" readonly="1"/>
+                    </group>
+
+                    <group>
+                        <div class="o_form_label">
+                            Description:
+                        </div>
+                        <p>
+                            This forecast is generated using a trained ARIMA model
+                            based on historical monthly sales data.
+                        </p>
+                    </group>
+                </sheet>
+            </form>
+
+        </field>
+    </record>
+
+</odoo>
         ],
     },
     "installable": True,
