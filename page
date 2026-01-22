@@ -3,7 +3,7 @@ Odoo Client Error
 UncaughtPromiseError
 Uncaught Promise > The ActionManager service can't handle actions of type undefined
 
-Occured on localhost:10018 on 2026-01-22 04:03:07 GMT
+Occured on localhost:10018 on 2026-01-22 04:10:17 GMT
 
 Error: The ActionManager service can't handle actions of type undefined
     at doAction (http://localhost:10018/web/assets/8b53fe5/web.assets_web.min.js:10111:7)
@@ -152,12 +152,7 @@ export class SaleMonthlyForecastChart extends Component {
 SaleMonthlyForecastChart.template = "sale_monthly_forecast_chart_template";
 registry.category("actions").add(
     "sale_monthly_forecast_chart",
-    (env, action) => {
-        return {
-            Component: SaleMonthlyForecastChart,
-        props: {action},
-        };
-    }
+    SaleMonthlyForecastChart
 );
 
 C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\__manifest__.py
