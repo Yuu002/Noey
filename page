@@ -1,119 +1,159 @@
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\__manifest__.py
-# -*- coding: utf-8 -*-
-{
-    "name": "Monthly Sales Forecast",
-    "version": "18.0.1.0.0",
-    "category": "Sales",
-    "summary": "Forecast monthly sales using ARIMA",
-    "description": """
-        Forecast monthly sales one month ahead
-        using a trained ARIMA model and display
-        the result as a line chart.
-    """,
-    "author": "Thanchanok",
-    "depends": ["sale", "web"],
-    "data": [
-        "security/ir.model.access.csv",
-        "views/sales_monthly_forecast_view.xml",
-    ],
-    "assets": {
-        "web.assets_backend": [
-            "web/static/lib/Chart/Chart.js",
-            "sales_monthly_forecast/static/src/xml/sales_monthly_forecast_chart.xml",
-            "sales_monthly_forecast/static/src/js/sales_monthly_forecast_chart.js",
-            "sales_monthly_forecast/static/src/css/sale_monthly_forecast.css",
-        ],
-    },
-    "installable": True,
-    "application": False,
-}
+C:\Users\noy\Desktop\odoo_module\custom_sales_report\models\sales_report_wizard.py
+from odoo import models, fields, api
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\views\sales_monthly_forecast_view.xml
+class SalesReportWizard(models.TransientModel):
+    _name = 'sales.performance.wizard'
+    _description = 'Sales Performance Report Wizard'
+
+    start_date = fields.Date(string="Start Date")
+    end_date = fields.Date(string="End Date")
+    display_product_details = fields.Boolean(string="Display Product Details", default=True)
+
+    def action_print_report(self):
+        domain = [('move_id.state', '=', 'posted'), ('move_id.move_type', '=', 'out_invoice')]
+        
+        if self.start_date:
+            domain.append(('date', '>=', self.start_date))
+        if self.end_date:
+            domain.append(('date', '<=', self.end_date))
+
+        lines = self.env['account.move.line'].search(domain).filtered(lambda l: l.product_id)
+
+        monthly_dict = {}
+        for line in lines:
+            month_key = line.date.strftime('%b %Y').upper() # เช่น 'OCT 2023'
+            if month_key not in monthly_dict:
+                monthly_dict[month_key] = {'total': 0.0, 'products': {}}
+            
+            monthly_dict[month_key]['total'] += line.price_subtotal
+            
+            if self.display_product_details:
+                prod_name = line.product_id.name
+                monthly_dict[month_key]['products'][prod_name] = monthly_dict[month_key]['products'].get(prod_name, 0.0) + line.price_subtotal
+
+        current_year = datetime.now().year
+        yearly_lines = self.env['account.move.line'].search([
+            ('move_id.state', '=', 'posted'),
+            ('move_id.move_type', '=', 'out_invoice'),
+            ('date', '>=', datetime(current_year, 1, 1)),
+            ('date', '<=', datetime(current_year, 12, 31))
+        ]).filtered(lambda l: l.product_id)
+        yearly_total = sum(yearly_lines.mapped('price_subtotal'))
+
+        all_lines = self.env['account.move.line'].search([
+            ('move_id.state', '=', 'posted'),
+            ('move_id.move_type', '=', 'out_invoice')
+        ]).filtered(lambda l: l.product_id)
+
+        grand_total = sum(all_lines.mapped('price_subtotal'))
+
+        data = {
+            'start_date': self.start_date,
+            'end_date': self.end_date,
+            'display_product_details': self.display_product_details,
+            'monthly_data': monthly_dict,
+            'yearly_total': yearly_total,
+            'grand_total': grand_total,
+            'printed_date': fields.Date.today().strftime('%Y-%m-%d'),
+        }
+        return self.env.ref('custom_sales_report.action_report_sales_perf').report_action(self, data=data)
+
+C:\Users\noy\Desktop\odoo_module\custom_sales_report\views\sales_report_template.xml
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
-    <!-- form action -->
-    <record id="action_sales_monthly_forecast" model="ir.actions.act_window">
-        <field name="name">Monthly Sales Forecast</field>
-        <field name="res_model">sale.monthly.forecast</field>
-        <field name="view_mode">form</field>
-        <field name="target">current</field>
-    </record>
-
-    <!-- client action (chart) -->
-    <record id="action_sales_monthly_forecast_chart" model="ir.actions.client">
-        <field name="name">Monthly Sales Forecast Chart</field>
-        <field name="tag">sale_monthly_forecast_chart</field>
-    </record>
-
-    <!-- menu -->
-    <menuitem
-        id="menu_sale_monthly_forecast_root"
-        name="Sales Forecast"
-        parent="sale.sale_menu_root"
-        sequence="30"/>
-
-    <menuitem
-        id="menu_sale_monthly_forecast"
-        name="Monthly Forecast"
-        parent="menu_sale_monthly_forecast_root"
-        action="action_sales_monthly_forecast"
-        sequence="10"/>
-
-    <!-- forn view -->
-    <record id="view_sale_monthly_forecast_form" model="ir.ui.view">
-        <field name="name">sale.monthly.forecast.form</field>
-        <field name="model">sale.monthly.forecast</field>
-        <field name="arch" type="xml">
-
-            <form string="Monthly Sales Forecast">
-                <header>
-                    <!-- compute forecast -->
-                    <button
-                        name="action_compute_forecast"
-                        type="object"
-                        string="Compute Forecast"
-                        class="btn-primary"/>
-
-                    <!-- open chart -->
-                    <button
-                        name="%(action_sales_monthly_forecast_chart)d"
-                        type="action"
-                        string="View Chart"
-                        class="btn-secondary"/>
-                </header>
-
-                <sheet>
-                    <group>
-                        <field name="forecast_month" readonly="1"/>
-                        <field name="forecast_sales" readonly="1"/>
-                    </group>
-
-                    <group>
-                        <div class="o_form_label">
-                            Description:
+    <template id="report_sales_perf_document">
+        <t t-call="web.html_container">
+            <t t-call="web.external_layout">
+                <div class="page">
+                    <div class="container">
+                        <div class="text-center" style="border-bottom: 2px solid #333; padding-bottom: 10px;">
+                            <h2 style="font-weight: bold; color: #1a4d80;">SALES PERFORMANCE REPORT</h2>
+                            <span>Period: </span>
+                            <span t-esc="start_date or 'Beginning'"/> to <span t-esc="end_date or 'Present'"/>
                         </div>
-                        <p>
-                            This forecast is generated using a trained ARIMA model
-                            based on historical monthly sales data.
-                        </p>
-                    </group>
-                </sheet>
-            </form>
 
+                        <div class="mt-4">
+                            <h4><strong>1. MONTHLY OVERVIEW</strong></h4>
+                            <t t-foreach="monthly_data" t-as="month_name">
+                                <div style="padding-left: 20px; margin-bottom: 15px;">
+                                    <p style="font-size: 1.1em; margin-bottom: 5px;">
+                                        <strong><t t-esc="month_name"/>: <t t-esc="'{:,.2f}'.format(monthly_data[month_name]['total'])"/> THB</strong>
+                                    </p>
+                                    <ul t-if="display_product_details" style="list-style-type: none; padding-left: 20px; color: #555;">
+                                        <t t-foreach="monthly_data[month_name]['products']" t-as="prod">
+                                            <li>- <t t-esc="prod"/>: <t t-esc="'{:,.2f}'.format(monthly_data[month_name]['products'][prod])"/> THB</li>
+                                        </t>
+                                    </ul>
+                                </div>
+                            </t>
+                        </div>
+
+                        <div class="mt-4">
+                            <h4><strong>2. YEARLY PERFORMANCE (YTD)</strong></h4>
+                            <div style="padding-left: 20px;">
+                                <p>- Total Sales this Year: <strong><t t-esc="'{:,.2f}'.format(yearly_total)"/> THB</strong></p>
+                            </div>
+                        </div>
+
+                        <div class="mt-4" style="background-color: #f8f9fa; padding: 15px; border: 1px solid #dee2e6;">
+                            <h4><strong>3. GRAND TOTAL REVENUE</strong></h4>
+                            <h3 class="text-end" style="font-weight: bold; color: #1a4d80; margin-top: 10px;">
+                                Cumulative Sales: <t t-esc="'{:,.2f}'.format(grand_total)"/> THB
+                            </h3>
+                        </div>
+
+                        <div class="mt-5 text-muted text-end" style="font-size: 10px; border-top: 1px solid #ccc; padding-top: 5px;">
+                            Printed on: <span t-esc="printed_date"/> | Status: All Posted Entries
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <record id="action_report_sales_perf" model="ir.actions.report">
+        <field name="name">Sales Performance Report</field>
+        <field name="model">sales.performance.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">custom_sales_report.report_sales_perf_document</field>
+        <field name="binding_model_id" ref="model_sales_performance_wizard"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>
+
+C:\Users\noy\Desktop\odoo_module\custom_sales_report\views\sales_report_wizard_view.xml
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sales_performance_wizard" model="ir.ui.view">
+        <field name="name">sales.performance.wizard.form</field>
+        <field name="model">sales.performance.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Report Options">
+                <group>
+                    <field name="start_date"/>
+                    <field name="end_date"/>
+                    <field name="display_product_details"/>
+                </group>
+                <footer>
+                    <button name="action_print_report" string="Print PDF" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
         </field>
     </record>
 
-</odoo>
+    <record id="action_sales_performance_report" model="ir.actions.act_window">
+        <field name="name">Sales Performance Report</field>
+        <field name="res_model">sales.performance.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
 
-C:\Users\noy\Desktop\odoo_module\sales_monthly_forecast\static\src\xml\sales_monthly_forecast_chart.xml
-<?xml version="1.0" encoding="utf-8"?>
-<templates xml:space="preserve">
-    <t t-name="sale_monthly_forecast_chart_template">
-        <div class="smf-container">
-            <h2 class="smf-title">Monthly Sales Forecast</h2>
-            <div class="smf-divider"></div>
-            <canvas t-ref="chart" style="width:100%; height:400px;"/>
-        </div>
-    </t>
-</templates>
+    <menuitem id="menu_sales_perf_report" 
+              name="Sales Performance" 
+              parent="account.menu_finance_reports" 
+              action="action_sales_performance_report"
+              sequence="10"/>
+</odoo>
