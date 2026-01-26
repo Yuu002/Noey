@@ -27,10 +27,7 @@ export class ProfitLossDashboard extends Component {
             return;
         }
 
-        if (!Array.isArray(data) || !data.length) {
-            console.warn("No P&L data");
-            return;
-        }
+        if (!Array.isArray(data) || !data.length) return;
 
         const canvas = document.getElementById("profitLossChart");
         if (!canvas) return;
@@ -85,16 +82,13 @@ export class ProfitLossDashboard extends Component {
                 maintainAspectRatio: false,
 
                 interaction: {
-                    mode: "point",
+                    mode: "nearest",
                     intersect: true,
                 },
 
                 onHover: (evt, activeEls) => {
                     evt.native.target.style.cursor =
-                        activeEls.length &&
-                        this.chart.data.datasets[activeEls[0].datasetIndex].type === "line"
-                            ? "pointer"
-                            : "default";
+                        activeEls.length ? "pointer" : "default";
                 },
 
                 onClick: (evt, activeEls) => {
@@ -102,15 +96,20 @@ export class ProfitLossDashboard extends Component {
 
                     const el = activeEls[0];
                     const dataset = this.chart.data.datasets[el.datasetIndex];
-
-                    // 👉 ให้กดได้เฉพาะเส้น Profit/Loss
-                    if (dataset.type !== "line") return;
-
                     const index = el.index;
-                    const month = data[index].month;
-                    const profitValue = data[index].profit;
 
-                    this.openProfitDetailView(month, profitValue);
+                    const month = data[index].month;
+
+                    // ✅ LINE → Profit / Loss
+                    if (dataset.type === "line") {
+                        this.openProfitDetailView(month, data[index].profit);
+                        return;
+                    }
+
+                    // ✅ BAR → Income / COGS
+                    if (dataset.label === "Income" || dataset.label === "COGS") {
+                        this.openBarDetailView(month, dataset.label);
+                    }
                 },
 
                 plugins: {
@@ -118,7 +117,6 @@ export class ProfitLossDashboard extends Component {
                         position: "top",
                     },
                     tooltip: {
-                        enabled: true,
                         intersect: true,
                     },
                 },
@@ -128,6 +126,41 @@ export class ProfitLossDashboard extends Component {
                         beginAtZero: true,
                     },
                 },
+            },
+        });
+    }
+
+    openBarDetailView(month, type) {
+        const [year, m] = month.split("-");
+        const dateFrom = `${year}-${m}-01`;
+        const dateTo = `${year}-${m}-31`;
+
+        const domain = [
+            ["move_id.state", "=", "posted"],
+            ["date", ">=", dateFrom],
+            ["date", "<=", dateTo],
+        ];
+
+        if (type === "Income") {
+            domain.push(["account_id.code", "like", "41%"]);
+        }
+
+        if (type === "COGS") {
+            domain.push(["account_id.code", "like", "51%"]);
+        }
+
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            name: `${type} (${month})`,
+            res_model: "account.move.line",
+            views: [
+                [false, "list"],
+                [false, "form"],
+            ],
+            domain,
+            target: "current",
+            context: {
+                search_default_group_by_move: 1,
             },
         });
     }
@@ -150,8 +183,8 @@ export class ProfitLossDashboard extends Component {
                 ["date", ">=", dateFrom],
                 ["date", "<=", dateTo],
                 "|",
-                ["account_id.code", "like", "41%"], // income
-                ["account_id.code", "like", "51%"], // cogs
+                ["account_id.code", "like", "41%"],
+                ["account_id.code", "like", "51%"],
             ],
             target: "current",
             context: {
