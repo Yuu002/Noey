@@ -1,9 +1,10 @@
 Odoo Client Error
 
-UncaughtPromiseError
-Uncaught Promise > The ActionManager service can't handle actions of type it.action.act_window
+UncaughtPromiseError > TypeError
+Uncaught Promise > Cannot read properties of undefined (reading 'map')
 
-Occured on localhost:10018 on 2026-01-26 06:47:22 GMT
+Occured on localhost:10018 on 2026-01-26 06:55:53 GMT
 
-Error: The ActionManager service can't handle actions of type it.action.act_window
-    at Object.doAction (http://localhost:10018/web/assets/c390cbd/web.assets_web.min.js:10111:7)
+TypeError: Cannot read properties of undefined (reading 'map')
+    at _preprocessAction (http://localhost:10018/web/assets/1ba5b57/web.assets_web.min.js:10018:73)
+    at Object.doAction (http://localhost:10018/web/assets/1ba5b57/web.assets_web.min.js:10109:170)
