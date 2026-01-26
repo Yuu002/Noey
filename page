@@ -3,8 +3,174 @@ Odoo Client Error
 UncaughtPromiseError > TypeError
 Uncaught Promise > Cannot read properties of undefined (reading 'map')
 
-Occured on localhost:10018 on 2026-01-26 06:55:53 GMT
+Occured on localhost:10018 on 2026-01-26 07:07:36 GMT
 
 TypeError: Cannot read properties of undefined (reading 'map')
-    at _preprocessAction (http://localhost:10018/web/assets/1ba5b57/web.assets_web.min.js:10018:73)
-    at Object.doAction (http://localhost:10018/web/assets/1ba5b57/web.assets_web.min.js:10109:170)
+    at _preprocessAction (http://localhost:10018/web/assets/b2d88e4/web.assets_web.min.js:10018:73)
+    at Object.doAction (http://localhost:10018/web/assets/b2d88e4/web.assets_web.min.js:10109:170)
+
+C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\static\src\js\profit_loss_chart.js
+/** @odoo-module **/
+
+import {registry} from "@web/core/registry";
+import {Component, onMounted} from "@odoo/owl";
+import {useService} from "@web/core/utils/hooks";
+
+export class ProfitLossDashboard extends Component {
+    setup() {
+        this.orm = useService("orm");
+        this.action = useService("action");
+
+        onMounted(() => {
+            this.renderChart();
+        });
+    }
+
+    async renderChart() {
+        let data;
+        try {
+            data = await this.orm.call(
+                "report.account.profit.loss",
+                "get_monthly_profit_loss",
+                [new Date().getFullYear()]
+            );
+        } catch(error) {
+            console.error("RPC error while fetching P&L data", error);
+            return;
+        }
+
+        if(!Array.isArray(data) || !data.length) {
+            console.warn("No date for Profit & Loss chart");
+            return;
+        }
+
+        const canvas = document.getElementById("profitLossChart");
+        if(!canvas) {
+            console.error("Canvas #profitLossChart not found");
+            return;
+        }
+
+        const ctx = canvas.getContext("2d");
+        if(this.chart) {
+            this.chart.destroy();
+        }
+
+        const labels = data.map(d => {
+            const[year, month] = d.month.split("-");
+            const date = new Date(year, month -1, 1);
+            return date.toLocaleString("en-US", {
+                month: "long",
+                year: "numeric",
+            });
+        });
+
+        const income = data.map(d => d.income);
+        const cogs = data.map(d => d.cogs);
+        const profit = data.map(d => d.profit);
+
+        this.chart = new Chart(ctx, {
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Income",
+                        data: income,
+                        type: "bar",
+                    },
+                    {
+                        label: "COGS",
+                        data: cogs,
+                        type: "bar",
+                    },
+                    {
+                        label: "Profit / Loss",
+                        data: profit,
+                        type: "line",
+                        tension: 0.3,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+
+                onHover: (event, elements) => {
+                    event.native.target.style.cursor = elements.length ? "pointer" : "default";
+                },
+
+                onClick: (event, elements) => {
+                    if (!elements.length) return;
+
+                    const element = elements[0];
+                    const datasetIndex = element.datasetIndex;
+                    const index = element.index;
+
+                    const month = data[index].month;
+                    const datasetLabel = this.chart.data.datasets[datasetIndex].label;
+
+                    this.openDetailView(month, datasetLabel);
+                },
+
+                plugins: {
+                    legend: {
+                        position: "top",
+                    },
+                    tooltip: {
+                        mode: "nearest",
+                        intersect: true,
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                    },
+                },
+            },
+        });
+    }
+
+    openDetailView(month, type) {
+        if(type === "Profit / Loss") {
+            return;
+        }
+
+        const [year, m] = month.split("-");
+        const dateFrom = `${year}-${m}-01`;
+        const dateTo = `${year}-${m}-31`;
+
+        let domain = [
+            ["move_id.state", "=", "posted"],
+            ["date", ">=", dateFrom],
+            ["date", "<=", dateTo],
+        ];
+
+        if(type === "Income") {
+            domain.push(["account_id.code", "=like", "41%"]);
+        }
+
+        if(type === "COGS") {
+            domain.push(["account_id.code", "=like", "51%"]);
+        }
+
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            name: `Profit & Loss - ${type} (${month})`,
+            res_model: "account.move.line",
+            view: [
+                [false, "list"],
+                [false, "from"],
+            ],
+            domain: domain,
+            target: "current",
+            context: {
+                search_default_group_by_move: 1,
+            },
+        });
+    }
+}
+ProfitLossDashboard.template = "ProfitLossDashboard";
+
+registry.category("actions").add(
+    "profit_loss_dashboard",
+    ProfitLossDashboard
+);
