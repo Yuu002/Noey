@@ -1,15 +1,15 @@
-Odoo Client Error
+web.assets_web.min.js:2601 TypeError: Cannot read properties of null (reading 'getParsed')
+    at web.assets_web.min.js:23627:142
+    at Array.filter (<anonymous>)
+    at Tooltip._getActiveElements (web.assets_web.min.js:23627:36)
+    at Tooltip.handleEvent (web.assets_web.min.js:23624:111)
+    at Object.afterEvent (web.assets_web.min.js:23632:166)
+    at callback (web.assets_web.min.js:21834:325)
+    at PluginService._notify (web.assets_web.min.js:22681:194)
+    at PluginService.notify (web.assets_web.min.js:22679:109)
+    at Chart.notifyPlugins (web.assets_web.min.js:22871:54)
+    at Chart._eventHandler (web.assets_web.min.js:22876:87)
 
-UncaughtPromiseError > TypeError
-Uncaught Promise > Cannot read properties of undefined (reading 'map')
-
-Occured on localhost:10018 on 2026-01-26 07:07:36 GMT
-
-TypeError: Cannot read properties of undefined (reading 'map')
-    at _preprocessAction (http://localhost:10018/web/assets/b2d88e4/web.assets_web.min.js:10018:73)
-    at Object.doAction (http://localhost:10018/web/assets/b2d88e4/web.assets_web.min.js:10109:170)
-
-C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\static\src\js\profit_loss_chart.js
 /** @odoo-module **/
 
 import {registry} from "@web/core/registry";
@@ -108,7 +108,12 @@ export class ProfitLossDashboard extends Component {
                     const month = data[index].month;
                     const datasetLabel = this.chart.data.datasets[datasetIndex].label;
 
-                    this.openDetailView(month, datasetLabel);
+                    if(datasetLabel === "Profit & Loss") {
+                        const profitValue = data[index].profit;
+                        this.openProfitDetailView(month, profitValue);
+                    } else {
+                        this.openDetailView(month, datasetLabel);
+                    }
                 },
 
                 plugins: {
@@ -156,14 +161,45 @@ export class ProfitLossDashboard extends Component {
             type: "ir.actions.act_window",
             name: `Profit & Loss - ${type} (${month})`,
             res_model: "account.move.line",
-            view: [
+            views: [
                 [false, "list"],
-                [false, "from"],
+                [false, "form"],
             ],
             domain: domain,
             target: "current",
             context: {
                 search_default_group_by_move: 1,
+            },
+        });
+    }
+
+    openProfitDetailView(month, profitValue) {
+        const [year, m] = month.split("-");
+        const dateFrom = `${year}-${m}-01`;
+        const dateTo = `${year}-${m}-31`;
+
+        const domain = [
+            ["move_id.state", "=", "posted"],
+            ["date", ">=", dateFrom],
+            ["date", "<=", dateTo],
+            "|",
+            ["account_id.code", "like", "41%"],
+            ["account_id.code", "like", "51%"]
+        ];
+
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            name: `Profit & Loss Detail (${month}) = ${profitValue.toLocaleString()}`,
+            res_model: "account.move.line",
+            views: [
+                [false, "list"],
+                [false, "form"],
+            ],
+            domain: domain,
+            target: "current",
+            context: {
+                search_default_group_by_move: 1,
+                default_date: dateFrom,
             },
         });
     }
