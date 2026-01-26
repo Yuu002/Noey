@@ -1,20 +1,8 @@
-web.assets_web.min.js:2601 TypeError: Cannot read properties of null (reading 'getParsed')
-    at web.assets_web.min.js:23627:142
-    at Array.filter (<anonymous>)
-    at Tooltip._getActiveElements (web.assets_web.min.js:23627:36)
-    at Tooltip.handleEvent (web.assets_web.min.js:23624:111)
-    at Object.afterEvent (web.assets_web.min.js:23632:166)
-    at callback (web.assets_web.min.js:21834:325)
-    at PluginService._notify (web.assets_web.min.js:22681:194)
-    at PluginService.notify (web.assets_web.min.js:22679:109)
-    at Chart.notifyPlugins (web.assets_web.min.js:22871:54)
-    at Chart._eventHandler (web.assets_web.min.js:22876:87)
-
 /** @odoo-module **/
 
-import {registry} from "@web/core/registry";
-import {Component, onMounted} from "@odoo/owl";
-import {useService} from "@web/core/utils/hooks";
+import { registry } from "@web/core/registry";
+import { Component, onMounted } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
 
 export class ProfitLossDashboard extends Component {
     setup() {
@@ -34,59 +22,61 @@ export class ProfitLossDashboard extends Component {
                 "get_monthly_profit_loss",
                 [new Date().getFullYear()]
             );
-        } catch(error) {
-            console.error("RPC error while fetching P&L data", error);
+        } catch (error) {
+            console.error("RPC error", error);
             return;
         }
 
-        if(!Array.isArray(data) || !data.length) {
-            console.warn("No date for Profit & Loss chart");
+        if (!Array.isArray(data) || !data.length) {
+            console.warn("No P&L data");
             return;
         }
 
         const canvas = document.getElementById("profitLossChart");
-        if(!canvas) {
-            console.error("Canvas #profitLossChart not found");
-            return;
-        }
+        if (!canvas) return;
 
         const ctx = canvas.getContext("2d");
-        if(this.chart) {
+
+        if (this.chart) {
             this.chart.destroy();
         }
 
         const labels = data.map(d => {
-            const[year, month] = d.month.split("-");
-            const date = new Date(year, month -1, 1);
-            return date.toLocaleString("en-US", {
+            const [y, m] = d.month.split("-");
+            return new Date(y, m - 1).toLocaleString("en-US", {
                 month: "long",
                 year: "numeric",
             });
         });
 
-        const income = data.map(d => d.income);
-        const cogs = data.map(d => d.cogs);
-        const profit = data.map(d => d.profit);
-
         this.chart = new Chart(ctx, {
+            type: "bar",
             data: {
-                labels: labels,
+                labels,
                 datasets: [
                     {
                         label: "Income",
-                        data: income,
-                        type: "bar",
+                        data: data.map(d => d.income),
+                        backgroundColor: "#4caf50",
+                        order: 2,
                     },
                     {
                         label: "COGS",
-                        data: cogs,
-                        type: "bar",
+                        data: data.map(d => d.cogs),
+                        backgroundColor: "#f44336",
+                        order: 2,
                     },
                     {
-                        label: "Profit / Loss",
-                        data: profit,
+                        label: "Profit & Loss",
+                        data: data.map(d => d.profit),
                         type: "line",
+                        borderColor: "#2196f3",
+                        backgroundColor: "rgba(33,150,243,0.15)",
                         tension: 0.3,
+                        fill: true,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        order: 1,
                     },
                 ],
             },
@@ -94,26 +84,33 @@ export class ProfitLossDashboard extends Component {
                 responsive: true,
                 maintainAspectRatio: false,
 
-                onHover: (event, elements) => {
-                    event.native.target.style.cursor = elements.length ? "pointer" : "default";
+                interaction: {
+                    mode: "point",
+                    intersect: true,
                 },
 
-                onClick: (event, elements) => {
-                    if (!elements.length) return;
+                onHover: (evt, activeEls) => {
+                    evt.native.target.style.cursor =
+                        activeEls.length &&
+                        this.chart.data.datasets[activeEls[0].datasetIndex].type === "line"
+                            ? "pointer"
+                            : "default";
+                },
 
-                    const element = elements[0];
-                    const datasetIndex = element.datasetIndex;
-                    const index = element.index;
+                onClick: (evt, activeEls) => {
+                    if (!activeEls.length) return;
 
+                    const el = activeEls[0];
+                    const dataset = this.chart.data.datasets[el.datasetIndex];
+
+                    // 👉 ให้กดได้เฉพาะเส้น Profit/Loss
+                    if (dataset.type !== "line") return;
+
+                    const index = el.index;
                     const month = data[index].month;
-                    const datasetLabel = this.chart.data.datasets[datasetIndex].label;
+                    const profitValue = data[index].profit;
 
-                    if(datasetLabel === "Profit & Loss") {
-                        const profitValue = data[index].profit;
-                        this.openProfitDetailView(month, profitValue);
-                    } else {
-                        this.openDetailView(month, datasetLabel);
-                    }
+                    this.openProfitDetailView(month, profitValue);
                 },
 
                 plugins: {
@@ -121,10 +118,11 @@ export class ProfitLossDashboard extends Component {
                         position: "top",
                     },
                     tooltip: {
-                        mode: "nearest",
+                        enabled: true,
                         intersect: true,
                     },
                 },
+
                 scales: {
                     y: {
                         beginAtZero: true,
@@ -134,76 +132,35 @@ export class ProfitLossDashboard extends Component {
         });
     }
 
-    openDetailView(month, type) {
-        if(type === "Profit / Loss") {
-            return;
-        }
-
-        const [year, m] = month.split("-");
-        const dateFrom = `${year}-${m}-01`;
-        const dateTo = `${year}-${m}-31`;
-
-        let domain = [
-            ["move_id.state", "=", "posted"],
-            ["date", ">=", dateFrom],
-            ["date", "<=", dateTo],
-        ];
-
-        if(type === "Income") {
-            domain.push(["account_id.code", "=like", "41%"]);
-        }
-
-        if(type === "COGS") {
-            domain.push(["account_id.code", "=like", "51%"]);
-        }
-
-        this.action.doAction({
-            type: "ir.actions.act_window",
-            name: `Profit & Loss - ${type} (${month})`,
-            res_model: "account.move.line",
-            views: [
-                [false, "list"],
-                [false, "form"],
-            ],
-            domain: domain,
-            target: "current",
-            context: {
-                search_default_group_by_move: 1,
-            },
-        });
-    }
-
     openProfitDetailView(month, profitValue) {
         const [year, m] = month.split("-");
         const dateFrom = `${year}-${m}-01`;
         const dateTo = `${year}-${m}-31`;
 
-        const domain = [
-            ["move_id.state", "=", "posted"],
-            ["date", ">=", dateFrom],
-            ["date", "<=", dateTo],
-            "|",
-            ["account_id.code", "like", "41%"],
-            ["account_id.code", "like", "51%"]
-        ];
-
         this.action.doAction({
             type: "ir.actions.act_window",
-            name: `Profit & Loss Detail (${month}) = ${profitValue.toLocaleString()}`,
+            name: `Profit & Loss (${month}) = ${profitValue.toLocaleString()}`,
             res_model: "account.move.line",
             views: [
                 [false, "list"],
                 [false, "form"],
             ],
-            domain: domain,
+            domain: [
+                ["move_id.state", "=", "posted"],
+                ["date", ">=", dateFrom],
+                ["date", "<=", dateTo],
+                "|",
+                ["account_id.code", "like", "41%"], // income
+                ["account_id.code", "like", "51%"], // cogs
+            ],
             target: "current",
             context: {
                 search_default_group_by_move: 1,
-                default_date: dateFrom,
             },
         });
     }
 }
+
 ProfitLossDashboard.template = "ProfitLossDashboard";
 
 registry.category("actions").add(
