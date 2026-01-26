@@ -1,159 +1,223 @@
-C:\Users\noy\Desktop\odoo_module\custom_sales_report\models\sales_report_wizard.py
-from odoo import models, fields, api
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
+C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\models\profit_loss_report.py
+from odoo import models, api
+from collections import defaultdict
 
-class SalesReportWizard(models.TransientModel):
-    _name = 'sales.performance.wizard'
-    _description = 'Sales Performance Report Wizard'
+class ProfitLossReport(models.AbstractModel):
+    _name = "report.account.profit.loss"
+    _description = "Monthly Profit and Loss Report"
 
-    start_date = fields.Date(string="Start Date")
-    end_date = fields.Date(string="End Date")
-    display_product_details = fields.Boolean(string="Display Product Details", default=True)
+    @api.model
+    def get_monthly_profit_loss(self, year):
+        company = self.env.company
+        result = defaultdict(lambda: {"income": 0.0, "cogs": 0.0})
 
-    def action_print_report(self):
-        domain = [('move_id.state', '=', 'posted'), ('move_id.move_type', '=', 'out_invoice')]
-        
-        if self.start_date:
-            domain.append(('date', '>=', self.start_date))
-        if self.end_date:
-            domain.append(('date', '<=', self.end_date))
+        domain = [
+            ("move_id.state", "=", "posted"),
+            ("move_id.company_id", "=", company.id),
+            ("account_id.code", "!=", False),
+        ]
 
-        lines = self.env['account.move.line'].search(domain).filtered(lambda l: l.product_id)
+        lines = self.env["account.move.line"].search(domain)
 
-        monthly_dict = {}
-        for line in lines:
-            month_key = line.date.strftime('%b %Y').upper() # เช่น 'OCT 2023'
-            if month_key not in monthly_dict:
-                monthly_dict[month_key] = {'total': 0.0, 'products': {}}
-            
-            monthly_dict[month_key]['total'] += line.price_subtotal
-            
-            if self.display_product_details:
-                prod_name = line.product_id.name
-                monthly_dict[month_key]['products'][prod_name] = monthly_dict[month_key]['products'].get(prod_name, 0.0) + line.price_subtotal
+        for line in lines:
+            if not line.move_id.date:
+                continue
 
-        current_year = datetime.now().year
-        yearly_lines = self.env['account.move.line'].search([
-            ('move_id.state', '=', 'posted'),
-            ('move_id.move_type', '=', 'out_invoice'),
-            ('date', '>=', datetime(current_year, 1, 1)),
-            ('date', '<=', datetime(current_year, 12, 31))
-        ]).filtered(lambda l: l.product_id)
-        yearly_total = sum(yearly_lines.mapped('price_subtotal'))
+            month = line.move_id.date.strftime("%Y-%m")
+            code = line.account_id.code.strip()
 
-        all_lines = self.env['account.move.line'].search([
-            ('move_id.state', '=', 'posted'),
-            ('move_id.move_type', '=', 'out_invoice')
-        ]).filtered(lambda l: l.product_id)
+            # Income: 41000 (Customer Invoice)
+            if code.startswith("41"):
+                result[month]["income"] += line.credit - line.debit
 
-        grand_total = sum(all_lines.mapped('price_subtotal'))
+            # COGS: 51xxx (Vendor Bill)
+            elif code.startswith("51"):
+                result[month]["cogs"] += line.debit - line.credit
 
-        data = {
-            'start_date': self.start_date,
-            'end_date': self.end_date,
-            'display_product_details': self.display_product_details,
-            'monthly_data': monthly_dict,
-            'yearly_total': yearly_total,
-            'grand_total': grand_total,
-            'printed_date': fields.Date.today().strftime('%Y-%m-%d'),
-        }
-        return self.env.ref('custom_sales_report.action_report_sales_perf').report_action(self, data=data)
+        data = []
+        for month in sorted(result.keys()):
+            income = result[month]["income"]
+            cogs = result[month]["cogs"]
 
-C:\Users\noy\Desktop\odoo_module\custom_sales_report\views\sales_report_template.xml
+            data.append({
+                "month": month,
+                "income": round(income, 2),
+                "cogs": round(cogs, 2),
+                "profit": round(income - cogs, 2),
+            })
+        return data
+C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\static\src\css\profit_loss_dashboard.css
+.o_profit_loss_dashboard {
+    padding: 24px 32px;
+}
+
+.o_pl_title {
+    margin-top: 8px;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.o_pl_divider {
+    border: none;
+    border-top: 1px solid #dcdcdc;
+    margin-bottom: 24px;
+}
+
+.o_pl_chart_container {
+    height: 420px;
+}
+C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\static\src\js\profit_loss_chart.js
+/** @odoo-module **/
+
+import {registry} from "@web/core/registry";
+import {Component, onMounted} from "@odoo/owl";
+import {useService} from "@web/core/utils/hooks";
+
+export class ProfitLossDashboard extends Component {
+    setup() {
+        this.orm = useService("orm");
+        onMounted(() => {
+            this.renderChart();
+        });
+    }
+
+    async renderChart() {
+        let data;
+        try {
+            data = await this.orm.call(
+                "report.account.profit.loss",
+                "get_monthly_profit_loss",
+                [new Date().getFullYear()]
+            );
+        } catch(error) {
+            console.error("RPC error while fetching P&L data", error);
+            return;
+        }
+
+        if(!Array.isArray(data) || !data.length) {
+            console.warn("No date for Profit&Loss chart", data);
+            return;
+        }
+
+        const canvas = document.getElementById("profitLossChart");
+        if(!canvas) {
+            console.error("Canvas #profitLossChart not found");
+            return;
+        }
+
+        const ctx = canvas.getContext("2d");
+        if(this.chart) {
+            this.chart.destroy();
+        }
+
+        const labels = data.map(d => {
+            const[year, month] = d.month.split("-");
+            const date = new Date(year, month -1, 1);
+            return date.toLocaleString("en-US", {
+                month: "long",
+                year: "numeric",
+            });
+        });
+        const income = data.map(d => d.income);
+        const cogs = data.map(d => d.cogs);
+        const profit = data.map(d => d.profit);
+
+        this.chart = new Chart(ctx, {
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Income",
+                        data: income,
+                        type: "bar",
+                    },
+                    {
+                        label: "COGS",
+                        data: cogs,
+                        type: "bar",
+                    },
+                    {
+                        label: "Profit / Loss",
+                        data: profit,
+                        type: "line",
+                        tension: 0.3,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: "top",
+                    },
+                    tooltip: {
+                        mode: "nearest",
+                        intersect: true,
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                    },
+                },
+            },
+        });
+    }
+}
+ProfitLossDashboard.template = "ProfitLossDashboard";
+
+registry.category("actions").add(
+    "profit_loss_dashboard",
+    ProfitLossDashboard
+);
+C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\static\src\xml\profit_loss_chart.xml
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+    <t t-name="ProfitLossDashboard">
+        <div class="o_profit_loss_dashboard">
+            <h2 class="o_pl_title">
+                Monthly Profit &amp; Loss
+            </h2>
+
+            <hr class="o_pl_divider"/>
+
+            <div class = "o_pl_chart_container" style="height:400px;">
+                <canvas id="profitLossChart"></canvas>
+            </div>
+        </div>
+    </t>
+</templates>
+C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\views\menu.xml
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="report_sales_perf_document">
-        <t t-call="web.html_container">
-            <t t-call="web.external_layout">
-                <div class="page">
-                    <div class="container">
-                        <div class="text-center" style="border-bottom: 2px solid #333; padding-bottom: 10px;">
-                            <h2 style="font-weight: bold; color: #1a4d80;">SALES PERFORMANCE REPORT</h2>
-                            <span>Period: </span>
-                            <span t-esc="start_date or 'Beginning'"/> to <span t-esc="end_date or 'Present'"/>
-                        </div>
-
-                        <div class="mt-4">
-                            <h4><strong>1. MONTHLY OVERVIEW</strong></h4>
-                            <t t-foreach="monthly_data" t-as="month_name">
-                                <div style="padding-left: 20px; margin-bottom: 15px;">
-                                    <p style="font-size: 1.1em; margin-bottom: 5px;">
-                                        <strong><t t-esc="month_name"/>: <t t-esc="'{:,.2f}'.format(monthly_data[month_name]['total'])"/> THB</strong>
-                                    </p>
-                                    <ul t-if="display_product_details" style="list-style-type: none; padding-left: 20px; color: #555;">
-                                        <t t-foreach="monthly_data[month_name]['products']" t-as="prod">
-                                            <li>- <t t-esc="prod"/>: <t t-esc="'{:,.2f}'.format(monthly_data[month_name]['products'][prod])"/> THB</li>
-                                        </t>
-                                    </ul>
-                                </div>
-                            </t>
-                        </div>
-
-                        <div class="mt-4">
-                            <h4><strong>2. YEARLY PERFORMANCE (YTD)</strong></h4>
-                            <div style="padding-left: 20px;">
-                                <p>- Total Sales this Year: <strong><t t-esc="'{:,.2f}'.format(yearly_total)"/> THB</strong></p>
-                            </div>
-                        </div>
-
-                        <div class="mt-4" style="background-color: #f8f9fa; padding: 15px; border: 1px solid #dee2e6;">
-                            <h4><strong>3. GRAND TOTAL REVENUE</strong></h4>
-                            <h3 class="text-end" style="font-weight: bold; color: #1a4d80; margin-top: 10px;">
-                                Cumulative Sales: <t t-esc="'{:,.2f}'.format(grand_total)"/> THB
-                            </h3>
-                        </div>
-
-                        <div class="mt-5 text-muted text-end" style="font-size: 10px; border-top: 1px solid #ccc; padding-top: 5px;">
-                            Printed on: <span t-esc="printed_date"/> | Status: All Posted Entries
-                        </div>
-                    </div>
-                </div>
-            </t>
-        </t>
-    </template>
-
-    <record id="action_report_sales_perf" model="ir.actions.report">
-        <field name="name">Sales Performance Report</field>
-        <field name="model">sales.performance.wizard</field>
-        <field name="report_type">qweb-pdf</field>
-        <field name="report_name">custom_sales_report.report_sales_perf_document</field>
-        <field name="binding_model_id" ref="model_sales_performance_wizard"/>
-        <field name="binding_type">report</field>
-    </record>
+    <menuitem
+        id="menu_profit_loss_root"
+        name="Profit &amp; Loss Dashboard"
+        action="action_profit_loss_dashboard"
+        parent="spreadsheet_dashboard.spreadsheet_dashboard_menu_root" 
+        sequence="50"
+    />
 </odoo>
-
-C:\Users\noy\Desktop\odoo_module\custom_sales_report\views\sales_report_wizard_view.xml
+C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\views\menu.xml
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="view_sales_performance_wizard" model="ir.ui.view">
-        <field name="name">sales.performance.wizard.form</field>
-        <field name="model">sales.performance.wizard</field>
-        <field name="arch" type="xml">
-            <form string="Report Options">
-                <group>
-                    <field name="start_date"/>
-                    <field name="end_date"/>
-                    <field name="display_product_details"/>
-                </group>
-                <footer>
-                    <button name="action_print_report" string="Print PDF" type="object" class="btn-primary"/>
-                    <button string="Cancel" class="btn-secondary" special="cancel"/>
-                </footer>
-            </form>
-        </field>
-    </record>
-
-    <record id="action_sales_performance_report" model="ir.actions.act_window">
-        <field name="name">Sales Performance Report</field>
-        <field name="res_model">sales.performance.wizard</field>
-        <field name="view_mode">form</field>
-        <field name="target">new</field>
-    </record>
-
-    <menuitem id="menu_sales_perf_report" 
-              name="Sales Performance" 
-              parent="account.menu_finance_reports" 
-              action="action_sales_performance_report"
-              sequence="10"/>
+    <menuitem
+        id="menu_profit_loss_root"
+        name="Profit &amp; Loss Dashboard"
+        action="action_profit_loss_dashboard"
+        parent="spreadsheet_dashboard.spreadsheet_dashboard_menu_root" 
+        sequence="50"
+    />
 </odoo>
+C:\Users\noy\Desktop\odoo_module\account_profit_loss_dashboard\views\profit_loss_dashboard_view.xml
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_profit_loss_dashboard" model="ir.actions.client">
+        <field name="name">Profit &amp; Loss Dashboard</field>
+        <field name="tag">profit_loss_dashboard</field>
+    </record>
+
+</odoo>
+อันนี้เป็นโค้ดที่ทำกราฟ profit and loss ที่ได้แค่กราฟ แต่ยังไม่สามารถกด interactive กราฟได้ ต้องการให้ กด bar chart แล้วแสดงข้อมูลตามภาพที่ให้ดู ทำได้ไหม แก้ตรงไหน
